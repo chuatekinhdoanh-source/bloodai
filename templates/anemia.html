@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khoa Thiếu Máu - BloodCare</title>
+    <!-- Kế thừa CSS giống trang chủ -->
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f7f6;}
+        .navbar { background-color: #343a40; overflow: hidden; }
+        .navbar a { float: left; display: block; color: white; text-align: center; padding: 14px 20px; text-decoration: none; font-weight: bold;}
+        .navbar a:hover { background-color: #ddd; color: black; }
+        .navbar a.active { background-color: #dc3545; color: white; } /* Đổi màu nút active thành đỏ cho Thiếu máu */
+        .container { max-width: 600px; margin: 40px auto; padding: 20px; background: white; border: 1px solid #ccc; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);}
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+        .form-group { flex: 1; }
+        input { display: block; width: 100%; padding: 8px; box-sizing: border-box; margin-top: 5px; }
+        button { width: 100%; padding: 12px; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px;}
+        footer { margin-top: 50px; text-align: center; color: #666; font-size: 14px; padding-bottom: 20px;}
+    </style>
+</head>
+<body>
+    <!-- Thanh Menu -->
+    <div class="navbar">
+        <a href="/">Khoa Tiểu Đường</a>
+        <a href="/anemia" class="active">Khoa Thiếu Máu</a>
+        <a href="/liver">Khoa Gan</a>
+        <a href="/kidney">Khoa Thận</a>
+    </div>
+
+    <div class="container">
+        <h2 style="text-align: center; color: #333;">Phân Tích Thiếu Máu (CatBoost)</h2>
+        <form action="/predict_anemia" method="POST">
+            <div class="form-row">
+                <div class="form-group"><label>Giới tính (0: Nữ, 1: Nam):</label><input type="text" name="Gender" required></div>
+                <div class="form-group"><label>Huyết sắc tố (Hemoglobin):</label><input type="text" name="Hemoglobin" required></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>MCH (Lượng Hb trung bình):</label><input type="text" name="MCH" required></div>
+                <div class="form-group"><label>MCHC (Nồng độ Hb):</label><input type="text" name="MCHC" required></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>MCV (Thể tích hồng cầu):</label><input type="text" name="MCV" required></div>
+            </div>
+            <button type="submit">Phân tích AI Thiếu Máu</button>
+        </form>
+    </div>
+
+    <footer>
+        <p>Người làm: Trần Hoài An | MSSV: PK04645</p>
+        <p>&copy; 2026 FPT Polytechnic. All rights reserved.</p>
+    </footer>
+</body>
+</html>

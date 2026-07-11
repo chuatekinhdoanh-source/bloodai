@@ -5,63 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BloodCare AI 2.0</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .container { max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f7f6;}
+        /* CSS cho thanh Menu */
+        .navbar { background-color: #343a40; overflow: hidden; }
+        .navbar a { float: left; display: block; color: white; text-align: center; padding: 14px 20px; text-decoration: none; font-weight: bold;}
+        .navbar a:hover { background-color: #ddd; color: black; }
+        .navbar a.active { background-color: #28a745; color: white; }
+        
+        /* CSS cho Form */
+        .container { max-width: 600px; margin: 40px auto; padding: 20px; background: white; border: 1px solid #ccc; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);}
         .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
         .form-group { flex: 1; }
         input { display: block; width: 100%; padding: 8px; box-sizing: border-box; margin-top: 5px; }
         button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px;}
-        footer { margin-top: 50px; text-align: center; color: #666; font-size: 14px; }
+        footer { margin-top: 50px; text-align: center; color: #666; font-size: 14px; padding-bottom: 20px;}
     </style>
 </head>
 <body>
+    <!-- Thanh Menu Điều Hướng đã được đặt đúng vị trí -->
+    <div class="navbar">
+        <a href="/" class="active">Khoa Tiểu Đường</a>
+        <a href="/anemia">Khoa Thiếu Máu</a>
+        <a href="/liver">Khoa Gan</a>
+        <a href="/kidney">Khoa Thận</a>
+    </div>
+
     <div class="container">
-        <h2 style="text-align: center;">Hệ Thống Phân Tích Nguy Cơ Tiểu Đường</h2>
+        <h2 style="text-align: center; color: #333;">Phân Tích Nguy Cơ Tiểu Đường (XGBoost)</h2>
         <form action="/predict" method="POST">
             <div class="form-row">
-                <div class="form-group">
-                    <label>Số lần mang thai (Pregnancies):</label>
-                    <input type="text" name="Pregnancies" value="0" required>
-                </div>
-                <div class="form-group">
-                    <label>Lượng đường huyết (Glucose):</label>
-                    <input type="text" name="Glucose" required>
-                </div>
+                <div class="form-group"><label>Số lần mang thai:</label><input type="text" name="Pregnancies" value="0" required></div>
+                <div class="form-group"><label>Glucose:</label><input type="text" name="Glucose" required></div>
             </div>
-
             <div class="form-row">
-                <div class="form-group">
-                    <label>Huyết áp (BloodPressure):</label>
-                    <input type="text" name="BloodPressure" required>
-                </div>
-                <div class="form-group">
-                    <label>Độ dày nếp da (SkinThickness):</label>
-                    <input type="text" name="SkinThickness" value="20" required>
-                </div>
+                <div class="form-group"><label>Huyết áp:</label><input type="text" name="BloodPressure" required></div>
+                <div class="form-group"><label>Độ dày nếp da:</label><input type="text" name="SkinThickness" value="20" required></div>
             </div>
-
             <div class="form-row">
-                <div class="form-group">
-                    <label>Insulin (mu U/ml):</label>
-                    <input type="text" name="Insulin" value="79" required>
-                </div>
-                <div class="form-group">
-                    <label>Chỉ số khối cơ thể (BMI):</label>
-                    <input type="text" name="BMI" required>
-                </div>
+                <div class="form-group"><label>Insulin:</label><input type="text" name="Insulin" value="79" required></div>
+                <div class="form-group"><label>BMI:</label><input type="text" name="BMI" required></div>
             </div>
-
             <div class="form-row">
-                <div class="form-group">
-                    <label>Tiền sử gia đình (Diab. Pedigree):</label>
-                    <input type="text" name="DiabetesPedigreeFunction" value="0.5" required>
-                </div>
-                <div class="form-group">
-                    <label>Tuổi (Age):</label>
-                    <input type="text" name="Age" required>
-                </div>
+                <div class="form-group"><label>Tiền sử gia đình:</label><input type="text" name="DiabetesPedigreeFunction" value="0.5" required></div>
+                <div class="form-group"><label>Tuổi:</label><input type="text" name="Age" required></div>
             </div>
-            
             <button type="submit">Phân tích AI</button>
         </form>
     </div>
