@@ -1,53 +1,28 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Khoa Gan - BloodCare</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; background-color: #f4f7f6;}
-        .navbar { background-color: #343a40; overflow: hidden; }
-        .navbar a { float: left; display: block; color: white; text-align: center; padding: 14px 20px; text-decoration: none; font-weight: bold;}
-        .navbar a:hover { background-color: #ddd; color: black; }
-        .navbar a.active { background-color: #fd7e14; color: white; } /* Màu cam cho Khoa Gan */
-        .container { max-width: 600px; margin: 40px auto; padding: 20px; background: white; border: 1px solid #ccc; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);}
-        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
-        .form-group { flex: 1; }
-        input { display: block; width: 100%; padding: 8px; box-sizing: border-box; margin-top: 5px; }
-        button { width: 100%; padding: 12px; background-color: #fd7e14; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px;}
-        footer { margin-top: 50px; text-align: center; color: #666; font-size: 14px; padding-bottom: 20px;}
-    </style>
-</head>
-<body>
-    <div class="navbar">
-        <a href="/">Khoa Tiểu Đường</a>
-        <a href="/anemia">Khoa Thiếu Máu</a>
-        <a href="/liver" class="active">Khoa Gan</a>
-        <a href="/kidney">Khoa Thận</a>
-    </div>
+{% extends "base.html" %}
+{% set active_page = "liver" %}
 
-    <div class="container">
-        <h2 style="text-align: center; color: #333;">Phân Tích Bệnh Gan (Random Forest)</h2>
-        <form action="/predict_liver" method="POST">
-            <div class="form-row">
-                <div class="form-group"><label>Tuổi (Age):</label><input type="text" name="Age" value="45" required></div>
-                <div class="form-group"><label>Giới tính (Gender_Male - 1:Nam, 0:Nữ):</label><input type="text" name="Gender_Male" value="1" required></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>Bilirubin toàn phần (Total_Bilirubin):</label><input type="text" name="Total_Bilirubin" value="1.0" required></div>
-                <div class="form-group"><label>Men gan AST (Alamine_Aminotransferase):</label><input type="text" name="Alamine_Aminotransferase" value="30" required></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>Men gan ALT (Aspartate_Aminotransferase):</label><input type="text" name="Aspartate_Aminotransferase" value="40" required></div>
-                <div class="form-group"><label>Albumin:</label><input type="text" name="Albumin" value="3.5" required></div>
-            </div>
-            <button type="submit">Phân tích AI Bệnh Gan</button>
-        </form>
-    </div>
+{% block content %}
+<div class="form-title">
+    <i class="fa-solid fa-lungs"></i>
+    <h2>Phân Tích Bệnh Gan (Random Forest)</h2>
+</div>
 
-    <footer>
-        <p>Người làm: Trần Hoài An | MSSV: PK04645</p>
-        <p>&copy; 2026 FPT Polytechnic. All rights reserved.</p>
-    </footer>
-</body>
-</html>
+<form action="/predict_liver" method="POST">
+    <div class="form-grid">
+        <div class="input-group"><label>Age (Tuổi)</label><input type="number" name="Age" value="45" required></div>
+        <div class="input-group"><label>Gender (1: Nam, 0: Nữ)</label><input type="number" name="Gender" value="1" required></div>
+        <div class="input-group"><label>Total_Bilirubin</label><input type="number" step="0.1" name="Total_Bilirubin" value="1.0" required></div>
+        <div class="input-group"><label>Direct_Bilirubin</label><input type="number" step="0.1" name="Direct_Bilirubin" value="0.1" required></div>
+        <div class="input-group"><label>Alkaline_Phosphotase</label><input type="number" step="0.1" name="Alkaline_Phosphotase" value="187" required></div>
+        <div class="input-group"><label>Alamine_Aminotransferase</label><input type="number" step="0.1" name="Alamine_Aminotransferase" value="16" required></div>
+        <div class="input-group"><label>Aspartate_Aminotransferase</label><input type="number" step="0.1" name="Aspartate_Aminotransferase" value="18" required></div>
+        <div class="input-group"><label>Total_Protiens</label><input type="number" step="0.1" name="Total_Protiens" value="6.8" required></div>
+        <div class="input-group"><label>Albumin</label><input type="number" step="0.1" name="Albumin" value="3.3" required></div>
+        <div class="input-group"><label>Albumin_and_Globulin_Ratio</label><input type="number" step="0.01" name="Albumin_and_Globulin_Ratio" value="0.9" required></div>
+    </div>
+    
+    <button type="submit" class="btn-submit">
+        <i class="fa-solid fa-brain"></i> Phân Tích Dữ Liệu Gan
+    </button>
+</form>
+{% endblock %}

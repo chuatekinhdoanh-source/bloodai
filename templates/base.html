@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BloodCare AI - Nền Tảng Y Tế Thông Minh</title>
+    <!-- Nhúng Font hiện đại từ Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Nhúng thư viện Icon FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #4f46e5;      /* Tím xanh nhạt hiện đại */
+            --primary-hover: #4338ca;
+            --bg-body: #f3f4f6;      /* Xám khói cực nhạt, không làm mỏi mắt */
+            --sidebar-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* --- SIDEBAR HIỆN ĐẠI --- */
+        .sidebar {
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            padding: 30px 20px;
+            box-shadow: 1px 0 15px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 10;
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 50px;
+            padding-left: 10px;
+        }
+        .logo-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--primary), #ec4899);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 20px;
+        }
+        .logo-text { font-size: 22px; font-weight: 700; color: #111827; letter-spacing: 0.5px;}
+        .logo-text span { color: var(--primary); }
+
+        .menu-label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; padding-left: 10px;}
+        
+        .sidebar a {
+            display: flex; align-items: center; gap: 15px;
+            padding: 14px 20px;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        .sidebar a i { font-size: 18px; width: 24px; text-align: center; transition: transform 0.3s;}
+        .sidebar a:hover {
+            background-color: #f3f4f6; color: var(--text-main);
+        }
+        .sidebar a:hover i { transform: translateX(3px); }
+        .sidebar a.active {
+            background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        /* --- VÙNG NỘI DUNG CHÍNH --- */
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow-y: auto;}
+        
+        .header { padding: 30px 40px; display: flex; justify-content: space-between; align-items: center;}
+        .greeting h1 { margin: 0; font-size: 24px; font-weight: 600;}
+        .greeting p { margin: 5px 0 0; color: var(--text-muted); font-size: 14px;}
+
+        .content { padding: 0 40px 40px; flex: 1;}
+        
+        /* Card chứa form nhập liệu */
+        .glass-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            max-width: 850px;
+            margin: 0 auto;
+        }
+
+        .form-title { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; border-bottom: 2px solid #f3f4f6; padding-bottom: 15px;}
+        .form-title i { font-size: 24px; color: var(--primary); }
+        .form-title h2 { margin: 0; font-size: 20px; font-weight: 600;}
+
+        /* --- KIỂU DÁNG Ô NHẬP LIỆU (INPUT) --- */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-bottom: 30px;}
+        .input-group { display: flex; flex-direction: column; gap: 8px;}
+        .input-group label { font-size: 13px; font-weight: 500; color: #374151;}
+        .input-group input {
+            padding: 14px 16px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 15px; font-family: inherit;
+            color: #111827; background-color: #f9fafb;
+            transition: all 0.3s ease;
+        }
+        .input-group input:focus {
+            border-color: var(--primary); background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); outline: none;
+        }
+
+        /* --- NÚT BẤM (BUTTON) --- */
+        .btn-submit {
+            width: 100%; padding: 16px;
+            background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
+            color: white; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 600; letter-spacing: 0.5px;
+            cursor: pointer; transition: all 0.3s ease;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+        }
+        .btn-submit:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);}
+        .btn-submit:active { transform: translateY(0);}
+
+        /* --- FOOTER --- */
+        footer { margin-top: auto; text-align: center; padding: 20px; color: var(--text-muted); font-size: 13px;}
+        footer p { margin: 4px 0;}
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            .sidebar { width: auto; flex-direction: row; flex-wrap: wrap; padding: 15px; gap: 10px; justify-content: center;}
+            .logo-area { margin-bottom: 10px; width: 100%; justify-content: center;}
+            .menu-label { display: none; }
+            .sidebar a { padding: 10px 15px; margin-bottom: 0; font-size: 14px;}
+            .header, .content { padding: 20px; }
+            .glass-card { padding: 25px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR BÊN TRÁI -->
+    <div class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fa-solid fa-notes-medical"></i></div>
+            <div class="logo-text">BloodCare<span>AI</span></div>
+        </div>
+        
+        <div class="menu-label">Trung Tâm Phân Tích</div>
+        <a href="/" class="{% if active_page == 'diabetes' %}active{% endif %}">
+            <i class="fa-solid fa-droplet"></i> Tiểu Đường
+        </a>
+        <a href="/anemia" class="{% if active_page == 'anemia' %}active{% endif %}">
+            <i class="fa-solid fa-vial-virus"></i> Thiếu Máu
+        </a>
+        <a href="/liver" class="{% if active_page == 'liver' %}active{% endif %}">
+            <i class="fa-solid fa-lungs"></i> Bệnh Gan
+        </a>
+        <a href="/kidney" class="{% if active_page == 'kidney' %}active{% endif %}">
+            <i class="fa-solid fa-shield-virus"></i> Bệnh Thận
+        </a>
+    </div>
+
+    <!-- KHÔNG GIAN LÀM VIỆC BÊN PHẢI -->
+    <div class="main-wrapper">
+        <div class="header">
+            <div class="greeting">
+                <h1>Chào mừng trở lại! 👋</h1>
+                <p>Hệ thống AI đang sẵn sàng xử lý dữ liệu xét nghiệm của bạn.</p>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="glass-card">
+                <!-- Nội dung các khoa sẽ được nhúng vào đây -->
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+        
+        <footer>
+            <p><strong>Thiết kế & Phát triển: Trần Hoài An | MSSV: PK04645</strong></p>
+            <p>&copy; 2026 FPT Polytechnic.</p>
+        </footer>
+    </div>
+
+</body>
+</html>
