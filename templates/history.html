@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+{% set active_page = "history" %}
+
+{% block content %}
+<style>
+    /* Style riêng cho trang lịch sử chẩn đoán */
+    .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #f3f4f6;
+        padding-bottom: 15px;
+    }
+    
+    .history-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .history-title i {
+        font-size: 24px;
+        color: var(--primary);
+    }
+    
+    .history-title h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    /* Thẻ thống kê nhanh */
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        padding: 20px;
+        border-radius: 15px;
+        background: #ffffff;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+        border: 1px solid #f3f4f6;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+
+    .icon-total { background: rgba(79, 70, 229, 0.1); color: var(--primary); }
+    .icon-normal { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .icon-risk { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+    .stat-details h3 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .stat-details p {
+        margin: 2px 0 0 0;
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    /* Bộ lọc */
+    .filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 25px;
+        background: #f9fafb;
+        padding: 8px;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .filter-btn {
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .filter-btn:hover {
+        color: var(--text-main);
+        background: rgba(0, 0, 0, 0.03);
+    }
+
+    .filter-btn.active {
+        background: #ffffff;
+        color: var(--primary);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        font-weight: 600;
+    }
+
+    /* Bảng dữ liệu */
+    .table-container {
+        overflow-x: auto;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 14px;
+    }
+
+    th {
+        background-color: #f9fafb;
+        color: #374151;
+        padding: 14px 18px;
+        font-weight: 600;
+        border-bottom: 1.5px solid #e5e7eb;
+    }
+
+    td {
+        padding: 16px 18px;
+        border-bottom: 1px solid #e5e7eb;
+        vertical-align: middle;
+        color: #4b5563;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    tr:hover td {
+        background-color: #f9fafb;
+    }
+
+    /* Các Badge chỉ số */
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .badge-diabetes { background-color: rgba(79, 70, 229, 0.1); color: var(--primary); }
+    .badge-anemia { background-color: rgba(236, 72, 153, 0.1); color: #ec4899; }
+    .badge-liver { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .badge-kidney { background-color: rgba(6, 182, 212, 0.1); color: #06b6d4; }
+
+    .result-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 13px;
+    }
+    
+    .result-normal {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #047857;
+    }
+
+    .result-risk {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #b91c1c;
+    }
+
+    /* Chi tiết chỉ số đầu vào */
+    .params-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        max-width: 320px;
+    }
+
+    .param-tag {
+        background: #f3f4f6;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        color: #4b5563;
+        font-family: monospace;
+    }
+
+    /* Nút xóa */
+    .btn-delete {
+        color: #ef4444;
+        background: none;
+        border: none;
+        padding: 6px;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-delete:hover {
+        background: rgba(239, 68, 68, 0.1);
+        transform: scale(1.1);
+    }
+
+    /* Trạng thái trống */
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: var(--text-muted);
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        margin-bottom: 15px;
+        color: #d1d5db;
+    }
+
+    .empty-state p {
+        margin: 5px 0 0;
+        font-size: 15px;
+    }
+</style>
+
+<div class="history-header">
+    <div class="history-title">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <h2>Lịch Sử Phân Tích Sức Khỏe</h2>
+    </div>
+</div>
+
+<!-- THỐNG KÊ NHANH -->
+<div class="stats-container">
+    <div class="stat-card">
+        <div class="stat-icon icon-total">
+            <i class="fa-solid fa-folder-open"></i>
+        </div>
+        <div class="stat-details">
+            <h3>{{ stats.total }}</h3>
+            <p>Tổng số ca phân tích</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon icon-normal">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-details">
+            <h3>{{ stats.normal }}</h3>
+            <p>Sức khỏe bình thường</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon icon-risk">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="stat-details">
+            <h3>{{ stats.risk }}</h3>
+            <p>Cảnh báo nguy cơ</p>
+        </div>
+    </div>
+</div>
+
+<!-- THANH LỌC BỆNH -->
+<div class="filter-bar">
+    <a href="/history" class="filter-btn {% if not current_filter %}active{% endif %}">
+        Tất cả
+    </a>
+    <a href="/history?filter=diabetes" class="filter-btn {% if current_filter == 'diabetes' %}active{% endif %}">
+        Tiểu Đường
+    </a>
+    <a href="/history?filter=anemia" class="filter-btn {% if current_filter == 'anemia' %}active{% endif %}">
+        Thiếu Máu
+    </a>
+    <a href="/history?filter=liver" class="filter-btn {% if current_filter == 'liver' %}active{% endif %}">
+        Bệnh Gan
+    </a>
+    <a href="/history?filter=kidney" class="filter-btn {% if current_filter == 'kidney' %}active{% endif %}">
+        Bệnh Thận
+    </a>
+</div>
+
+<!-- DANH SÁCH BẢN GHI -->
+{% if predictions %}
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 12%;">Khoa chẩn đoán</th>
+                {% if session.get('role') == 'doctor' %}
+                <th style="width: 15%;">Bệnh nhân xét nghiệm</th>
+                {% else %}
+                <th style="width: 15%;">Bác sĩ chẩn đoán</th>
+                {% endif %}
+                <th style="width: 35%;">Chỉ số xét nghiệm nhập vào</th>
+                <th style="width: 13%;">Kết quả phân tích</th>
+                <th style="width: 15%;">Thời gian thực hiện</th>
+                {% if session.get('role') == 'doctor' %}
+                <th style="width: 5%;">Xóa</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for pred in predictions %}
+            <tr>
+                <td><strong>{{ loop.index }}</strong></td>
+                <td>
+                    {% if pred.disease_type == 'diabetes' %}
+                        <span class="badge badge-diabetes">Tiểu Đường</span>
+                    {% elif pred.disease_type == 'anemia' %}
+                        <span class="badge badge-anemia">Thiếu Máu</span>
+                    {% elif pred.disease_type == 'liver' %}
+                        <span class="badge badge-liver">Bệnh Gan</span>
+                    {% elif pred.disease_type == 'kidney' %}
+                        <span class="badge badge-kidney">Bệnh Thận</span>
+                    {% else %}
+                        <span class="badge">{{ pred.disease_type }}</span>
+                    {% endif %}
+                </td>
+                <td style="font-size: 14.5px;">
+                    {% if session.get('role') == 'doctor' %}
+                        <strong>{{ pred.patient_name }}</strong>
+                    {% else %}
+                        <span>BS. {{ pred.doctor_name }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="params-list">
+                        {% for key, val in pred.input_data.items() %}
+                            <span class="param-tag"><strong>{{ key }}:</strong> {{ val }}</span>
+                        {% endfor %}
+                    </div>
+                </td>
+                <td>
+                    {% if pred.is_positive == 1 %}
+                        <span class="result-badge result-risk">
+                            <i class="fa-solid fa-circle-exclamation"></i> Có Nguy Cơ
+                        </span>
+                    {% else %}
+                        <span class="result-badge result-normal">
+                            <i class="fa-solid fa-circle-check"></i> Bình Thường
+                        </span>
+                    {% endif %}
+                </td>
+                <td style="font-size: 13px; color: var(--text-muted);">
+                    {{ pred.created_at }}
+                </td>
+                {% if session.get('role') == 'doctor' %}
+                <td>
+                    <form action="/delete/{{ pred.id }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bản ghi chẩn đoán này?');">
+                        <button type="submit" class="btn-delete" title="Xóa lịch sử">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="fa-solid fa-clipboard-question"></i>
+    <p><strong>Không tìm thấy dữ liệu lịch sử nào.</strong></p>
+    <p style="font-size: 13px;">Hãy thực hiện các phân tích xét nghiệm để AI học và ghi nhận dữ liệu.</p>
+</div>
+{% endif %}
+
+{% endblock %}

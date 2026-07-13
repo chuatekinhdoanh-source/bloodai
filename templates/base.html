@@ -158,6 +158,19 @@
             <div class="logo-text">BloodCare<span>AI</span></div>
         </div>
         
+        {% if session.get('fullname') %}
+        <div class="menu-label" style="color: #374151; font-weight: 700; margin-bottom: 25px; display: flex; align-items: center; gap: 8px; font-size: 13px; text-transform: none; letter-spacing: 0;">
+            {% if session.get('role') == 'doctor' %}
+                <i class="fa-solid fa-user-doctor" style="color: var(--primary); font-size: 16px;"></i>
+                <span>BS. {{ session.get('fullname') }}</span>
+            {% else %}
+                <i class="fa-solid fa-hospital-user" style="color: #ec4899; font-size: 16px;"></i>
+                <span>BN. {{ session.get('fullname') }}</span>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% if session.get('role') == 'doctor' %}
         <div class="menu-label">Trung Tâm Phân Tích</div>
         <a href="/" class="{% if active_page == 'diabetes' %}active{% endif %}">
             <i class="fa-solid fa-droplet"></i> Tiểu Đường
@@ -171,6 +184,18 @@
         <a href="/kidney" class="{% if active_page == 'kidney' %}active{% endif %}">
             <i class="fa-solid fa-shield-virus"></i> Bệnh Thận
         </a>
+        {% endif %}
+        
+        <div class="menu-label" style="margin-top: 20px;">Dữ Liệu Hệ Thống</div>
+        <a href="/history" class="{% if active_page == 'history' %}active{% endif %}">
+            <i class="fa-solid fa-clock-rotate-left"></i> Lịch Sử Chẩn Đoán
+        </a>
+
+        {% if session.get('user_id') %}
+        <a href="/logout" style="margin-top: auto; color: #ef4444; background: rgba(239, 68, 68, 0.05); transition: all 0.3s ease;">
+            <i class="fa-solid fa-right-from-bracket" style="color: #ef4444;"></i> Đăng Xuất
+        </a>
+        {% endif %}
     </div>
 
     <!-- KHÔNG GIAN LÀM VIỆC BÊN PHẢI -->

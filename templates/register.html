@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký - BloodCare AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-body: #f3f4f6;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-main);
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 40px 35px;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            text-align: center;
+        }
+
+        .logo-area {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary), #ec4899);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 22px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: #111827;
+            letter-spacing: 0.5px;
+        }
+
+        .logo-text span {
+            color: var(--primary);
+        }
+
+        h2 {
+            margin: 0 0 8px 0;
+            font-size: 22px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        p.subtitle {
+            margin: 0 0 30px 0;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* --- ALERTS --- */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 13.5px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-error {
+            background-color: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fee2e2;
+        }
+
+        .alert-success {
+            background-color: #ecfdf5;
+            color: #047857;
+            border: 1px solid #d1fae5;
+        }
+
+        /* --- INPUT GROUPS --- */
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+            padding-left: 2px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 16px;
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 14px 16px 14px 46px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            color: #111827;
+            background-color: #f9fafb;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .input-wrapper input:focus {
+            border-color: var(--primary);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            outline: none;
+        }
+
+        /* --- BUTTONS --- */
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 25px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        /* --- FOOTER --- */
+        .auth-footer {
+            margin-top: 25px;
+            font-size: 13.5px;
+            color: var(--text-muted);
+        }
+
+        .auth-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .auth-footer a:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fa-solid fa-notes-medical"></i></div>
+            <div class="logo-text">BloodCare<span>AI</span></div>
+        </div>
+        
+        <h2>Tạo tài khoản mới</h2>
+        <p class="subtitle">Đăng ký tài khoản để bắt đầu theo dõi sức khỏe</p>
+
+        <!-- FLASHED MESSAGES -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert {% if category == 'error' %}alert-error{% else %}alert-success{% endif %}">
+                        {% if category == 'error' %}
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                        {% else %}
+                            <i class="fa-solid fa-circle-check"></i>
+                        {% endif %}
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form action="/register" method="POST" onsubmit="return validateForm()">
+            <div class="form-group">
+                <label>Họ và tên</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-signature"></i>
+                    <input type="text" name="fullname" placeholder="VD: Trần Hoài An..." required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Vai trò hệ thống</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user-tag" style="position: absolute; left: 16px; color: var(--text-muted); font-size: 16px; z-index: 5;"></i>
+                    <select name="role" required style="width: 100%; padding: 14px 16px 14px 46px; border: 1.5px solid #e5e7eb; border-radius: 12px; font-size: 15px; font-family: inherit; color: #111827; background-color: #f9fafb; transition: all 0.3s ease; box-sizing: border-box; outline: none;">
+                        <option value="doctor">Bác sĩ (Doctor)</option>
+                        <option value="patient">Bệnh nhân (Patient)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Tên đăng nhập</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user"></i>
+                    <input type="text" name="username" placeholder="Tên viết liền không dấu..." required autocomplete="username">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Mật khẩu</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="password" name="password" placeholder="Tối thiểu 6 ký tự..." required autocomplete="new-password">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Xác nhận mật khẩu</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <input type="password" id="confirm_password" placeholder="Nhập lại mật khẩu..." required autocomplete="new-password">
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-submit">
+                <i class="fa-solid fa-user-plus"></i> Đăng Ký Tài Khoản
+            </button>
+        </form>
+        
+        <div class="auth-footer">
+            Đã có tài khoản? <a href="/login">Đăng nhập</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function validateForm() {
+        var password = document.getElementById("password").value;
+        var confirm_password = document.getElementById("confirm_password").value;
+        
+        if (password.length < 6) {
+            alert("Mật khẩu phải chứa ít nhất 6 ký tự.");
+            return false;
+        }
+        
+        if (password !== confirm_password) {
+            alert("Xác nhận mật khẩu không khớp.");
+            return false;
+        }
+        return true;
+    }
+</script>
+
+</body>
+</html>

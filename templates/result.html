@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% set active_page = "" %}
+
+{% block content %}
+<style>
+    .result-container {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    .result-icon {
+        font-size: 48px;
+        margin-bottom: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        transition: transform 0.5s ease;
+    }
+    .result-icon:hover {
+        transform: rotate(15deg) scale(1.05);
+    }
+    .icon-positive {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+    .icon-negative {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+    .result-text {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+    .text-positive {
+        color: #ef4444;
+    }
+    .text-negative {
+        color: #10b981;
+    }
+    .result-desc {
+        font-size: 15px;
+        color: var(--text-muted);
+        margin-bottom: 35px;
+        max-width: 550px;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.6;
+    }
+    
+    /* Danh sách chỉ số đã nhập */
+    .params-summary {
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 35px;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: left;
+    }
+    
+    .params-summary h4 {
+        margin: 0 0 12px 0;
+        font-size: 14px;
+        color: #374151;
+        font-weight: 600;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 6px;
+    }
+    
+    .params-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 10px;
+    }
+    
+    .param-item {
+        font-size: 12px;
+        color: #4b5563;
+    }
+    
+    .param-item strong {
+        color: #111827;
+    }
+    
+    .btn-group {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+    .btn-action {
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-back {
+        background-color: #f3f4f6;
+        color: var(--text-main);
+    }
+    .btn-back:hover {
+        background-color: #e5e7eb;
+        transform: translateY(-2px);
+    }
+    .btn-history {
+        background-color: var(--primary);
+        color: white;
+        box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+    }
+    .btn-history:hover {
+        background-color: var(--primary-hover);
+        box-shadow: 0 6px 15px rgba(79, 70, 229, 0.3);
+        transform: translateY(-2px);
+    }
+</style>
+
+<div class="result-container">
+    <div class="result-icon {% if is_positive == 1 %}icon-positive{% else %}icon-negative{% endif %}">
+        {% if is_positive == 1 %}
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        {% else %}
+            <i class="fa-solid fa-circle-check"></i>
+        {% endif %}
+    </div>
+    
+    <h3 style="color: var(--text-muted); font-size: 14px; font-weight: 600; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px;">
+        {{ disease_name }}
+    </h3>
+    
+    <div class="result-text {% if is_positive == 1 %}text-positive{% else %}text-negative{% endif %}">
+        {{ result_text }}
+    </div>
+    
+    <p class="result-desc">
+        {% if is_positive == 1 %}
+            Hệ thống AI phân tích và dự đoán bạn có chỉ số vượt ngưỡng an toàn của bệnh lý này. Kết quả này mang tính chất tham khảo dựa trên mô hình học máy. Hãy sớm sắp xếp lịch hẹn với bác sĩ chuyên khoa để làm thêm xét nghiệm chuyên sâu và nhận tư vấn y khoa chính xác.
+        {% else %}
+            Chúc mừng bạn! AI đánh giá các chỉ số sinh hóa máu của bạn hiện đang trong trạng thái bình thường và khỏe mạnh. Hãy tiếp tục duy trì chế độ dinh dưỡng cân đối, tập thể dục đều đặn và khám sức khỏe định kỳ nhé.
+        {% endif %}
+    </p>
+
+    <!-- HIỂN THỊ TÓM TẮT CHỈ SỐ ĐÃ NHẬP -->
+    <div class="params-summary">
+        <h4>Chỉ số sinh hóa bạn đã nhập:</h4>
+        <div class="params-summary-grid">
+            {% for key, val in input_data.items() %}
+                <div class="param-item">
+                    <strong>{{ key }}:</strong> {{ val }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="btn-group">
+        <a href="{{ back_url }}" class="btn-action btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại kiểm tra
+        </a>
+        <a href="/history" class="btn-action btn-history">
+            Xem lịch sử chẩn đoán <i class="fa-solid fa-arrow-right"></i>
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -8,8 +8,23 @@
 </div>
 
 <form action="/predict" method="POST">
-    <!-- Dùng CSS Grid mới để tự động sắp xếp các ô nhập liệu đẹp mắt -->
     <div class="form-grid">
+        <!-- CHỌN BỆNH NHÂN XÉT NGHIỆM -->
+        <div class="input-group" style="grid-column: span 2; margin-bottom: 10px;">
+            <label style="font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-hospital-user" style="font-size: 16px;"></i> Chọn Bệnh Nhân Xét Nghiệm
+            </label>
+            <select name="patient_id" required style="width: 100%; padding: 14px; border: 1.5px solid #e5e7eb; border-radius: 12px; font-size: 14.5px; outline: none; background-color: #f9fafb; font-family: inherit; color: #111827; box-sizing: border-box; transition: all 0.3s ease;">
+                <option value="">-- Click để chọn bệnh nhân nhận kết quả chẩn đoán --</option>
+                {% for pt in patients %}
+                    <option value="{{ pt.id }}">{{ pt.fullname }} (@{{ pt.username }})</option>
+                {% endfor %}
+            </select>
+            {% if not patients %}
+            <p style="margin: 6px 0 0 0; font-size: 12.5px; color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Chưa có bệnh nhân nào đăng ký tài khoản trên hệ thống.</p>
+            {% endif %}
+        </div>
+
         <div class="input-group">
             <label>Số lần mang thai</label>
             <input type="number" name="Pregnancies" value="0" placeholder="VD: 0, 1, 2..." required>
