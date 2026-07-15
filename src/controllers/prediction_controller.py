@@ -466,6 +466,14 @@ def _get_pred_and_prob(model, input_df, name):
         print(f"[PREDICTION] Error predicting {name}: {e}")
         return 0, 0.0
 
+def _safe_float(val, default):
+    if val is None or str(val).strip() == '':
+        return default
+    try:
+        return float(val)
+    except ValueError:
+        return default
+
 @prediction_bp.route('/predict_screening', methods=['POST'])
 @login_required
 @doctor_required
@@ -478,52 +486,52 @@ def predict_screening():
         patient_name = patient['fullname'] if patient else "Chưa rõ"
 
         # 2. Thu thập chỉ số cơ bản
-        age = float(request.form.get('Age', 45))
-        gender = float(request.form.get('Gender', 1))  # 1: Nam, 0: Nữ
-        glucose = float(request.form.get('Glucose', 100.0))
-        hemo = float(request.form.get('Hemoglobin', 14.0))
-        bp = float(request.form.get('BloodPressure', 80.0))
-        bmi = float(request.form.get('BMI', 22.0))
+        age = _safe_float(request.form.get('Age'), 45.0)
+        gender = _safe_float(request.form.get('Gender'), 1.0)  # 1: Nam, 0: Nữ
+        glucose = _safe_float(request.form.get('Glucose'), 100.0)
+        hemo = _safe_float(request.form.get('Hemoglobin'), 14.0)
+        bp = _safe_float(request.form.get('BloodPressure'), 80.0)
+        bmi = _safe_float(request.form.get('BMI'), 22.0)
 
         # 3. Thu thập chỉ số chuyên sâu
-        mcv = float(request.form.get('MCV', 90.0))
-        mch = float(request.form.get('MCH', 28.0))
-        mchc = float(request.form.get('MCHC', 33.0))
+        mcv = _safe_float(request.form.get('MCV'), 90.0)
+        mch = _safe_float(request.form.get('MCH'), 28.0)
+        mchc = _safe_float(request.form.get('MCHC'), 33.0)
 
-        total_bilirubin = float(request.form.get('Total_Bilirubin', 1.0))
-        direct_bilirubin = float(request.form.get('Direct_Bilirubin', 0.3))
-        alkaline_phosphotase = float(request.form.get('Alkaline_Phosphotase', 187.0))
-        alamine_aminotransferase = float(request.form.get('Alamine_Aminotransferase', 16.0))
-        aspartate_aminotransferase = float(request.form.get('Aspartate_Aminotransferase', 18.0))
-        total_proteins = float(request.form.get('Total_Protiens', 6.8))
-        albumin = float(request.form.get('Albumin', 3.3))
-        albumin_globulin_ratio = float(request.form.get('Albumin_and_Globulin_Ratio', 0.9))
+        total_bilirubin = _safe_float(request.form.get('Total_Bilirubin'), 1.0)
+        direct_bilirubin = _safe_float(request.form.get('Direct_Bilirubin'), 0.3)
+        alkaline_phosphotase = _safe_float(request.form.get('Alkaline_Phosphotase'), 187.0)
+        alamine_aminotransferase = _safe_float(request.form.get('Alamine_Aminotransferase'), 16.0)
+        aspartate_aminotransferase = _safe_float(request.form.get('Aspartate_Aminotransferase'), 18.0)
+        total_proteins = _safe_float(request.form.get('Total_Protiens'), 6.8)
+        albumin = _safe_float(request.form.get('Albumin'), 3.3)
+        albumin_globulin_ratio = _safe_float(request.form.get('Albumin_and_Globulin_Ratio'), 0.9)
 
-        sg = float(request.form.get('sg', 1.020))
-        al = float(request.form.get('al', 0.0))
-        su = float(request.form.get('su', 0.0))
-        bu = float(request.form.get('bu', 36.0))
-        sc = float(request.form.get('sc', 1.2))
-        sod = float(request.form.get('sod', 135.0))
-        pot = float(request.form.get('pot', 4.5))
-        rbc = float(request.form.get('rbc', 1.0))
-        pc = float(request.form.get('pc', 1.0))
-        pcc = float(request.form.get('pcc', 0.0))
-        ba = float(request.form.get('ba', 0.0))
-        pcv = float(request.form.get('pcv', 44.0))
-        wc = float(request.form.get('wc', 7800.0))
-        rc = float(request.form.get('rc', 5.2))
-        htn = float(request.form.get('htn', 0.0))
-        dm = float(request.form.get('dm', 0.0))
-        cad = float(request.form.get('cad', 0.0))
-        appet = float(request.form.get('appet', 1.0))
-        pe = float(request.form.get('pe', 0.0))
-        ane = float(request.form.get('ane', 0.0))
+        sg = _safe_float(request.form.get('sg'), 1.020)
+        al = _safe_float(request.form.get('al'), 0.0)
+        su = _safe_float(request.form.get('su'), 0.0)
+        bu = _safe_float(request.form.get('bu'), 36.0)
+        sc = _safe_float(request.form.get('sc'), 1.2)
+        sod = _safe_float(request.form.get('sod'), 135.0)
+        pot = _safe_float(request.form.get('pot'), 4.5)
+        rbc = _safe_float(request.form.get('rbc'), 1.0)
+        pc = _safe_float(request.form.get('pc'), 1.0)
+        pcc = _safe_float(request.form.get('pcc'), 0.0)
+        ba = _safe_float(request.form.get('ba'), 0.0)
+        pcv = _safe_float(request.form.get('pcv'), 44.0)
+        wc = _safe_float(request.form.get('wc'), 7800.0)
+        rc = _safe_float(request.form.get('rc'), 5.2)
+        htn = _safe_float(request.form.get('htn'), 0.0)
+        dm = _safe_float(request.form.get('dm'), 0.0)
+        cad = _safe_float(request.form.get('cad'), 0.0)
+        appet = _safe_float(request.form.get('appet'), 1.0)
+        pe = _safe_float(request.form.get('pe'), 0.0)
+        ane = _safe_float(request.form.get('ane'), 0.0)
 
-        pregnancies = float(request.form.get('Pregnancies', 0)) if gender == 0 else 0.0
-        skin = float(request.form.get('SkinThickness', 20.0))
-        insulin = float(request.form.get('Insulin', 79.0))
-        dpf = float(request.form.get('DiabetesPedigreeFunction', 0.47))
+        pregnancies = _safe_float(request.form.get('Pregnancies'), 0.0) if gender == 0.0 else 0.0
+        skin = _safe_float(request.form.get('SkinThickness'), 20.0)
+        insulin = _safe_float(request.form.get('Insulin'), 79.0)
+        dpf = _safe_float(request.form.get('DiabetesPedigreeFunction'), 0.47)
 
         # 4. CHẠY MÔ HÌNH AI CHO TỪNG BỆNH
 
@@ -690,13 +698,205 @@ def predict_screening():
             'Chỉ số khối cơ thể (BMI)': bmi
         }
 
+        # 8. TỰ ĐỘNG HÓA BỆNH ÁN ĐIỆN TỬ (AUTO-NOTE GENERATOR)
+        gender_text = "Nam" if gender == 1 else "Nữ"
+        summary_intro = f"Bệnh nhân {gender_text.lower()}, {int(age)} tuổi."
+        
+        findings = []
+        abnormal_inputs = []
+        recommendations = []
+        
+        # Check models
+        risks = []
+        if pred_db == 1:
+            risks.append("Tiểu đường")
+            recommendations.append("Đo HbA1c, OGTT")
+        if pred_anm == 1:
+            risks.append("Thiếu máu")
+            recommendations.append("Định lượng Sắt, Ferritin, CBC")
+        if pred_liv == 1:
+            risks.append("Bệnh lý gan")
+            recommendations.append("Siêu âm ổ bụng, HBsAg, Anti-HCV")
+        if pred_kdn == 1:
+            risks.append("Bệnh lý thận")
+            recommendations.append("Siêu âm hệ tiết niệu, đo eGFR, tổng phân tích nước tiểu")
+            
+        if risks:
+            findings.append(f"Hệ thống AI phát hiện nguy cơ cao mắc các bệnh: {', '.join(risks)}.")
+        else:
+            findings.append("Các mô hình AI chưa phát hiện nguy cơ bệnh lý sàng lọc nguy hiểm.")
+            
+        # Check abnormal inputs
+        if glucose > 126:
+            abnormal_inputs.append(f"Glucose tăng cao ({glucose} mg/dL)")
+        elif glucose < 70:
+            abnormal_inputs.append(f"Glucose giảm ({glucose} mg/dL)")
+            
+        if hemo < 12.0:
+            abnormal_inputs.append(f"Hemoglobin giảm ({hemo} g/dL)")
+            
+        if bp >= 90:
+            abnormal_inputs.append(f"Huyết áp tâm trương cao ({bp} mmHg)")
+            
+        if bmi >= 25.0:
+            abnormal_inputs.append(f"Thể trạng thừa cân/béo phì (BMI {bmi})")
+        elif bmi < 18.5:
+            abnormal_inputs.append(f"Thể trạng thiếu cân (BMI {bmi})")
+            
+        if alamine_aminotransferase > 56:
+            abnormal_inputs.append(f"Men gan ALT tăng cao ({alamine_aminotransferase} U/L)")
+        if aspartate_aminotransferase > 40:
+            abnormal_inputs.append(f"Men gan AST tăng ({aspartate_aminotransferase} U/L)")
+            
+        if sc > 1.2:
+            abnormal_inputs.append(f"Creatinine huyết thanh tăng ({sc} mg/dL)")
+            
+        if abnormal_inputs:
+            findings.append(f"Ghi nhận bất thường cận lâm sàng: {', '.join(abnormal_inputs)}.")
+            
+        # Compile note
+        recommendation_text = ""
+        if recommendations:
+            recommendation_text = f" Đề nghị chỉ định cận lâm sàng thêm: {', '.join(recommendations)}."
+        else:
+            recommendation_text = " Đề nghị duy trì khám định kỳ theo dõi."
+            
+        auto_note = f"{summary_intro} { ' '.join(findings) }{recommendation_text} Yêu cầu bệnh nhân điều chỉnh chế độ ăn uống, sinh hoạt lành mạnh theo hướng dẫn y khoa."
+
         return render_template('screening_result.html',
                                patient_name=patient_name,
                                status_color=status_color,
                                status_text=status_text,
                                status_desc=status_desc,
                                diseases=diseases,
-                               input_summary=input_summary)
+                               input_summary=input_summary,
+                               auto_note=auto_note)
     except Exception as e:
         return f"<h3>Lỗi Sàng lọc tổng quát: {e}</h3>"
+
+
+@prediction_bp.route('/digitize_pdf', methods=['POST'])
+@login_required
+@doctor_required
+def digitize_pdf():
+    try:
+        if 'pdf_file' not in request.files:
+            return jsonify({'status': 'error', 'message': 'Không tìm thấy file PDF được tải lên.'}), 400
+            
+        file = request.files['pdf_file']
+        if file.filename == '':
+            return jsonify({'status': 'error', 'message': 'Tên file trống.'}), 400
+            
+        if not file.filename.lower().endswith('.pdf'):
+            return jsonify({'status': 'error', 'message': 'Định dạng file không phải PDF.'}), 400
+            
+        import PyPDF2
+        import io
+        import re
+        
+        pdf_stream = io.BytesIO(file.read())
+        reader = PyPDF2.PdfReader(pdf_stream)
+        
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text() or ""
+            
+        # Parse text using regex
+        extracted = {}
+        
+        # Mapping patterns (supporting accented/unaccented variations and intermediate comments via non-greedy wildcard)
+        patterns = {
+            'Age': [r'(?:Tuổi|Tuoi|Age).*?(\d+)'],
+            'Gender': [r'(?:Giới\s+tính|Gioi\s+tinh|Gender|Sex).*?(Nam|Nữ|Nu|Male|Female|1|0)'],
+            'Glucose': [r'(?:Glucose|Đường\s+huyết|Duong\s+huyet|bgr).*?(\d+(?:\.\d+)?)'],
+            'Hemoglobin': [r'(?:Hemoglobin|Huyết\s+sắc\s+tố|Huyet\s+sac\s+to|Hgb|hemo).*?(\d+(?:\.\d+)?)'],
+            'BloodPressure': [
+                r'(?:Huyết\s+áp|Huyet\s+ap|Blood\s+Pressure|HA|bp).*?(\d+)\s*/\s*(\d+)',
+                r'(?:Huyết\s+áp\s+tâm\s+trương|Huyet\s+ap\s+tam\s+truong|Diastolic\s+Blood\s+Pressure|Diastolic\s+BP|bp).*?(\d+(?:\.\d+)?)'
+            ],
+            'BMI': [r'(?:BMI|Chỉ\s+số\s+khối\s+cơ\s+thể|Chi\s+so\s+khoi\s+co\s+the).*?(\d+(?:\.\d+)?)'],
+            'MCV': [r'(?:MCV).*?(\d+(?:\.\d+)?)'],
+            'MCH': [r'(?:MCH).*?(\d+(?:\.\d+)?)'],
+            'MCHC': [r'(?:MCHC).*?(\d+(?:\.\d+)?)'],
+            'Total_Bilirubin': [r'(?:Bilirubin\s+toàn\s+phần|Bilirubin\s+toan\s+phan|Total\s+Bilirubin|TBil).*?(\d+(?:\.\d+)?)'],
+            'Direct_Bilirubin': [r'(?:Bilirubin\s+trực\s+tiếp|Bilirubin\s+truc\s+tiep|Direct\s+Bilirubin|DBil).*?(\d+(?:\.\d+)?)'],
+            'Alkaline_Phosphotase': [r'(?:Alkaline\s+Phosphotase|ALP).*?(\d+(?:\.\d+)?)'],
+            'Alamine_Aminotransferase': [r'(?:Alamine\s+Aminotransferase|ALT|SGPT|Alanine\s+Aminotransferase).*?(\d+(?:\.\d+)?)'],
+            'Aspartate_Aminotransferase': [r'(?:Aspartate\s+Aminotransferase|AST|SGOT).*?(\d+(?:\.\d+)?)'],
+            'Total_Protiens': [r'(?:Protein\s+toàn\s+phần|Protein\s+toan\s+phan|Total\s+Protein|TP|Total\s+Protiens).*?(\d+(?:\.\d+)?)'],
+            'Albumin': [r'(?:Albumin|ALB).*?(\d+(?:\.\d+)?)'],
+            'Albumin_and_Globulin_Ratio': [r'(?:Tỷ\s+lệ\s+A/G|Ty\s+le\s+A/G|Albumin/Globulin|A/G\s+Ratio|AG\s+Ratio).*?(\d+(?:\.\d+)?)'],
+            'sg': [r'(?:Tỷ\s+trọng\s+nước\s+tiểu|Ty\s+trong\s+nuoc\s+tieu|Tỷ\s+trọng|Ty\s+trong|Specific\s+Gravity|sg).*?(1\.\d{3})'],
+            'al': [r'(?:Albumin\s+nước\s+tiểu|Albumin\s+nuoc\s+tieu|Urine\s+Albumin|al).*?(\d+)'],
+            'su': [r'(?:Đường\s+nước\s+tiểu|Duong\s+nuoc\s+tieu|Urine\s+Sugar|su).*?(\d+)'],
+            'bu': [r'(?:Ure\s+máu|Ure\s+mau|Ure|Blood\s+Urea|bu).*?(\d+(?:\.\d+)?)'],
+            'sc': [r'(?:Creatinine|sc).*?(\d+(?:\.\d+)?)'],
+            'sod': [r'(?:Natri|Sodium|sod).*?(\d+(?:\.\d+)?)'],
+            'pot': [r'(?:Kali|Potassium|pot).*?(\d+(?:\.\d+)?)'],
+            'pcv': [r'(?:Thể\s+tích\s+hồng\s+cầu|The\s+tich\s+hong\s+cau|PCV|HCT).*?(\d+(?:\.\d+)?)'],
+            'wc': [r'(?:Bạch\s+cầu|Bach\s+cau|WBC).*?(\d+(?:\.\d+)?)'],
+            'rc': [r'(?:Hồng\s+cầu|Hong\s+cau|RBC).*?(\d+(?:\.\d+)?)'],
+            'htn': [r'(?:Tăng\s+huyết\s+áp|Tang\s+huyet\s+ap|Hypertension|htn).*?(Có|Không|Co|Khong|Yes|No|1|0)'],
+            'dm': [r'(?:Đái\s+tháo\s+đường|Dai\s+thao\s+duong|Tiểu\s+đường|Tieu\s+duong|Diabetes|dm).*?(Có|Không|Co|Khong|Yes|No|1|0)'],
+            'cad': [r'(?:Bệnh\s+mạch\s+vành|Benh\s+mach\s+vanh|Mạch\s+vành|Mach\s+vanh|CAD).*?(Có|Không|Co|Khong|Yes|No|1|0)'],
+            'pe': [r'(?:Phù\s+chân|Phu\s+chan|Pedal\s+Edema|pe).*?(Có|Không|Co|Khong|Yes|No|1|0)'],
+            'ane': [r'(?:Thiếu\s+máu|Thieu\s+mau|Anemia|ane).*?(Có|Không|Co|Khong|Yes|No|1|0)'],
+            'appet': [r'(?:Thèm\s+ăn|Them\s+an|Ăn\s+ngon|An\s+ngon|Appetite|appet).*?(Ngon|Kém|Kem|Chán|Chan|Good|Poor)'],
+            'Pregnancies': [r'(?:Số\s+lần\s+mang\s+thai|So\s+lan\s+mang\s+thai|Mang\s+thai|Pregnancies).*?(\d+)'],
+            'SkinThickness': [r'(?:Độ\s+dày\s+nếp\s+da|Do\s+day\s+nep\s+da|Skin\s+Thickness).*?(\d+(?:\.\d+)?)'],
+            'Insulin': [r'(?:Insulin).*?(\d+(?:\.\d+)?)'],
+            'DiabetesPedigreeFunction': [r'(?:Diabetes\s+Pedigree|DPF).*?(\d+(?:\.\d+)?)']
+        }
+        
+        for key, regexes in patterns.items():
+            for regex in regexes:
+                match = re.search(regex, text, re.IGNORECASE)
+                if match:
+                    val = match.group(1).strip()
+                    # Custom processing for different types
+                    if key == 'BloodPressure' and len(match.groups()) > 1:
+                        # Composite systolic/diastolic -> get diastolic (second number)
+                        val2 = match.group(2)
+                        if val2:
+                            extracted[key] = float(val2)
+                        else:
+                            extracted[key] = float(val)
+                    elif key == 'Gender':
+                        val_lower = val.lower()
+                        if val_lower in ['nam', 'male', '1']:
+                            extracted[key] = 1
+                        else:
+                            extracted[key] = 0
+                    elif key in ['htn', 'dm', 'cad', 'pe', 'ane']:
+                        val_lower = val.lower()
+                        if val_lower in ['có', 'yes', '1']:
+                            extracted[key] = 1
+                        else:
+                            extracted[key] = 0
+                    elif key == 'appet':
+                        val_lower = val.lower()
+                        if val_lower in ['ngon', 'good', 'ngon miệng']:
+                            extracted[key] = 1
+                        else:
+                            extracted[key] = 0
+                    else:
+                        # standard float/int
+                        try:
+                            if '.' in val:
+                                extracted[key] = float(val)
+                            else:
+                                extracted[key] = int(val)
+                        except ValueError:
+                            pass
+                    break  # Stop search at first match
+                    
+        return jsonify({
+            'status': 'success',
+            'extracted_data': extracted,
+            'text_preview': text[:200] + '...' if len(text) > 200 else text
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'Lỗi số hóa bệnh án: {str(e)}'}), 500
+
 
