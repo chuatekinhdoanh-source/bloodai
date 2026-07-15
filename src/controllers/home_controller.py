@@ -34,3 +34,11 @@ def liver():
 def kidney():
     patients = get_all_patients()
     return render_template('kidney.html', patients=patients)
+
+@home_bp.route('/screening')
+@login_required
+@doctor_required
+def screening():
+    patients = get_all_patients()
+    return render_template('screening.html', patients=patients)
+

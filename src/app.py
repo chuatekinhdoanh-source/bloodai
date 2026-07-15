@@ -6,7 +6,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from models import init_db
-from controllers import auth_bp, home_bp, prediction_bp, history_bp
+from controllers import auth_bp, home_bp, prediction_bp, history_bp, appointment_bp
 
 app = Flask(__name__, template_folder='../templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'bloodcare_secret_session_key_2026')
@@ -19,6 +19,7 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(home_bp)
 app.register_blueprint(prediction_bp)
 app.register_blueprint(history_bp)
+app.register_blueprint(appointment_bp)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)

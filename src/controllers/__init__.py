@@ -2,3 +2,4 @@ from controllers.auth_controller import auth_bp
 from controllers.home_controller import home_bp
 from controllers.prediction_controller import prediction_bp
 from controllers.history_controller import history_bp
+from controllers.appointment_controller import appointment_bp
