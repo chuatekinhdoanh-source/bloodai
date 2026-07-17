@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+{% set active_page = "appointments" %}
+
+{% block content %}
+<style>
+    /* Layout grid cho Bệnh nhân */
+    .appointment-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.8fr;
+        gap: 30px;
+        align-items: start;
+    }
+
+    @media (max-width: 1050px) {
+        .appointment-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Các Card khung */
+    .app-card {
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+        padding: 30px;
+        border: 1px solid #f1f5f9;
+    }
+
+    .app-card-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1.5px solid #f1f5f9;
+        padding-bottom: 15px;
+    }
+
+    .app-card-title i {
+        color: var(--primary);
+        font-size: 20px;
+    }
+
+    /* Badges trạng thái */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 12.5px;
+    }
+
+    .status-pending {
+        background-color: rgba(245, 158, 11, 0.1);
+        color: #d97706;
+    }
+
+    .status-confirmed {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #059669;
+    }
+
+    .status-cancelled {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #dc2626;
+    }
+
+    .status-completed {
+        background-color: rgba(139, 92, 246, 0.1);
+        color: #7c3aed;
+    }
+
+    /* Nút hành động cho Bác sĩ */
+    .action-btn-group {
+        display: flex;
+        gap: 6px;
+    }
+
+    .btn-action {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: white;
+    }
+
+    .btn-confirm {
+        background-color: #10b981;
+    }
+    .btn-confirm:hover {
+        background-color: #059669;
+        transform: translateY(-1px);
+    }
+
+    .btn-cancel {
+        background-color: #ef4444;
+    }
+    .btn-cancel:hover {
+        background-color: #dc2626;
+        transform: translateY(-1px);
+    }
+
+    .btn-complete {
+        background-color: #8b5cf6;
+    }
+    .btn-complete:hover {
+        background-color: #7c3aed;
+        transform: translateY(-1px);
+    }
+
+    /* Khung Thống kê cho Bác sĩ */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+        border: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .stat-val {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .stat-lbl {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+</style>
+
+<div class="form-title">
+    <i class="fa-solid fa-calendar-check"></i>
+    <h2>Quản Lý Lịch Hẹn Khám</h2>
+</div>
+
+<!-- THÔNG BÁO FLASH -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert {% if category == 'error' %}alert-error{% else %}alert-success{% endif %}" style="margin-bottom: 25px;">
+                {% if category == 'error' %}
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                {% else %}
+                    <i class="fa-solid fa-circle-check"></i>
+                {% endif %}
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+{% if session.get('role') == 'patient' %}
+<!-- ======================== GIAO DIỆN BỆNH NHÂN ======================== -->
+<div class="appointment-grid">
+    <!-- CỘT TRÁI: ĐẶT HÈN MỚI -->
+    <div class="app-card">
+        <div class="app-card-title">
+            <i class="fa-solid fa-calendar-plus"></i>
+            <span>Đặt Lịch Hẹn Mới</span>
+        </div>
+        
+        <form action="/appointments/book" method="POST">
+            <div class="input-group" style="margin-bottom: 20px;">
+                <label for="doctor_id">Chọn Bác Sĩ Khám</label>
+                <select name="doctor_id" id="doctor_id" required style="width: 100%; padding: 14px; border: 1.5px solid #e5e7eb; border-radius: 12px; font-size: 14.5px; outline: none; background-color: #f9fafb; font-family: inherit; color: #111827; box-sizing: border-box;">
+                    <option value="">-- Click để chọn bác sĩ phụ trách --</option>
+                    {% for dr in doctors %}
+                        <option value="{{ dr.id }}">BS. {{ dr.fullname }} (@{{ dr.username }})</option>
+                    {% endfor %}
+                </select>
+                {% if not doctors %}
+                <p style="margin: 6px 0 0 0; font-size: 12px; color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Hệ thống chưa có bác sĩ nào đăng ký hoạt động.</p>
+                {% endif %}
+            </div>
+
+            <div class="input-group" style="margin-bottom: 20px;">
+                <label for="appointment_date">Chọn Ngày Hẹn</label>
+                <input type="date" name="appointment_date" id="appointment_date" required min="{{ datetime }}">
+            </div>
+
+            <div class="input-group" style="margin-bottom: 20px;">
+                <label for="appointment_time">Chọn Giờ Hẹn</label>
+                <input type="time" name="appointment_time" id="appointment_time" required>
+            </div>
+
+            <div class="input-group" style="margin-bottom: 25px;">
+                <label for="reason">Lý do khám / Triệu chứng bệnh</label>
+                <textarea name="reason" id="reason" placeholder="Nhập lý do đặt khám hoặc các triệu chứng của bạn..." required style="width: 100%; padding: 14px; border: 1.5px solid #e5e7eb; border-radius: 12px; font-size: 14.5px; outline: none; background-color: #f9fafb; font-family: inherit; color: #111827; box-sizing: border-box; height: 100px; resize: vertical;"></textarea>
+            </div>
+
+            <button type="submit" class="btn-submit" {% if not doctors %}disabled style="opacity: 0.6; cursor: not-allowed;"{% endif %}>
+                <i class="fa-solid fa-paper-plane"></i> Gửi Yêu Cầu Hẹn
+            </button>
+        </form>
+    </div>
+
+    <!-- CỘT PHẢI: LỊCH SỬ LỊCH HẸN -->
+    <div class="app-card">
+        <div class="app-card-title">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>Lịch Hẹn Của Bạn</span>
+        </div>
+
+        {% if appointments %}
+        <div class="table-container">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Bác sĩ khám</th>
+                        <th style="width: 25%;">Ngày & Giờ</th>
+                        <th style="width: 30%;">Lý do / Triệu chứng</th>
+                        <th style="width: 20%;">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appt in appointments %}
+                    <tr>
+                        <td><strong>BS. {{ appt.doctor_name }}</strong></td>
+                        <td style="font-size: 13.5px; color: #334155;">
+                            <div><i class="fa-regular fa-calendar" style="color: var(--primary);"></i> {{ appt.appointment_date }}</div>
+                            <div style="margin-top: 4px;"><i class="fa-regular fa-clock" style="color: #ec4899;"></i> {{ appt.appointment_time }}</div>
+                        </td>
+                        <td style="font-size: 13.5px; color: var(--text-muted);">{{ appt.reason }}</td>
+                        <td>
+                            {% if appt.status == 'pending' %}
+                                <span class="status-badge status-pending"><i class="fa-regular fa-clock"></i> Chờ duyệt</span>
+                            {% elif appt.status == 'confirmed' %}
+                                <span class="status-badge status-confirmed"><i class="fa-regular fa-calendar-check"></i> Đã duyệt</span>
+                            {% elif appt.status == 'cancelled' %}
+                                <span class="status-badge status-cancelled"><i class="fa-regular fa-calendar-times"></i> Đã hủy</span>
+                            {% elif appt.status == 'completed' %}
+                                <span class="status-badge status-completed"><i class="fa-solid fa-user-check"></i> Đã khám</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fa-solid fa-calendar-day"></i>
+            <p><strong>Bạn chưa có lịch hẹn khám nào.</strong></p>
+            <p style="font-size: 13px;">Hãy đặt lịch hẹn đầu tiên của bạn với bác sĩ phụ trách.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% else %}
+<!-- ======================== GIAO DIỆN BÁC SĨ ======================== -->
+<div class="stats-row">
+    <div class="stat-card">
+        <div>
+            <div class="stat-val">{{ appointments|length }}</div>
+            <div class="stat-lbl">Tổng ca hẹn khám</div>
+        </div>
+        <div class="stat-icon" style="background: rgba(79, 70, 229, 0.1); color: var(--primary);"><i class="fa-solid fa-list-check"></i></div>
+    </div>
+    <div class="stat-card">
+        <div>
+            <div class="stat-val">{{ appointments|selectattr('status', 'equalto', 'pending')|list|length }}</div>
+            <div class="stat-lbl">Chờ xác nhận</div>
+        </div>
+        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #d97706;"><i class="fa-solid fa-hourglass-half"></i></div>
+    </div>
+    <div class="stat-card">
+        <div>
+            <div class="stat-val">{{ appointments|selectattr('status', 'equalto', 'confirmed')|list|length }}</div>
+            <div class="stat-lbl">Lịch sắp khám</div>
+        </div>
+        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #059669;"><i class="fa-solid fa-calendar-check"></i></div>
+    </div>
+    <div class="stat-card">
+        <div>
+            <div class="stat-val">{{ appointments|selectattr('status', 'equalto', 'completed')|list|length }}</div>
+            <div class="stat-lbl">Đã khám xong</div>
+        </div>
+        <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1); color: #7c3aed;"><i class="fa-solid fa-user-check"></i></div>
+    </div>
+</div>
+
+<div class="app-card">
+    <div class="app-card-title">
+        <i class="fa-solid fa-calendar-check"></i>
+        <span>Danh Sách Đăng Ký Khám Từ Bệnh Nhân</span>
+    </div>
+
+    {% if appointments %}
+    <div class="table-container">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="width: 20%;">Bệnh nhân</th>
+                    <th style="width: 20%;">Ngày & Giờ đặt</th>
+                    <th style="width: 25%;">Lý do khám / Triệu chứng</th>
+                    <th style="width: 15%;">Trạng thái</th>
+                    <th style="width: 20%;">Xử lý yêu cầu</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for appt in appointments %}
+                <tr>
+                    <td><strong>{{ appt.patient_name }}</strong></td>
+                    <td style="font-size: 13.5px; color: #334155;">
+                        <div><i class="fa-regular fa-calendar" style="color: var(--primary);"></i> {{ appt.appointment_date }}</div>
+                        <div style="margin-top: 4px;"><i class="fa-regular fa-clock" style="color: #ec4899;"></i> {{ appt.appointment_time }}</div>
+                    </td>
+                    <td style="font-size: 13.5px; color: var(--text-muted);">{{ appt.reason }}</td>
+                    <td>
+                        {% if appt.status == 'pending' %}
+                            <span class="status-badge status-pending"><i class="fa-regular fa-clock"></i> Chờ xác nhận</span>
+                        {% elif appt.status == 'confirmed' %}
+                            <span class="status-badge status-confirmed"><i class="fa-regular fa-calendar-check"></i> Đã duyệt</span>
+                        {% elif appt.status == 'cancelled' %}
+                            <span class="status-badge status-cancelled"><i class="fa-regular fa-calendar-times"></i> Đã hủy</span>
+                        {% elif appt.status == 'completed' %}
+                            <span class="status-badge status-completed"><i class="fa-solid fa-user-check"></i> Đã khám</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if appt.status == 'pending' %}
+                        <div class="action-btn-group">
+                            <form action="/appointments/status/{{ appt.id }}" method="POST">
+                                <input type="hidden" name="status" value="confirmed">
+                                <button type="submit" class="btn-action btn-confirm"><i class="fa-solid fa-check"></i> Duyệt</button>
+                            </form>
+                            <form action="/appointments/status/{{ appt.id }}" method="POST">
+                                <input type="hidden" name="status" value="cancelled">
+                                <button type="submit" class="btn-action btn-cancel"><i class="fa-solid fa-xmark"></i> Hủy</button>
+                            </form>
+                        </div>
+                        {% elif appt.status == 'confirmed' %}
+                        <div class="action-btn-group">
+                            <form action="/appointments/status/{{ appt.id }}" method="POST">
+                                <input type="hidden" name="status" value="completed">
+                                <button type="submit" class="btn-action btn-complete"><i class="fa-solid fa-user-check"></i> Xong</button>
+                            </form>
+                            <form action="/appointments/status/{{ appt.id }}" method="POST">
+                                <input type="hidden" name="status" value="cancelled">
+                                <button type="submit" class="btn-action btn-cancel"><i class="fa-solid fa-xmark"></i> Hủy</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <span style="font-size: 13px; color: var(--text-muted); font-style: italic;">Không có hành động</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fa-solid fa-calendar-day"></i>
+        <p><strong>Không có lịch hẹn khám nào được đăng ký với bạn.</strong></p>
+        <p style="font-size: 13px;">Khi bệnh nhân đặt lịch hẹn khám, yêu cầu sẽ xuất hiện tại đây.</p>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Javascript để tự động lấy ngày hiện tại đặt min cho ô chọn ngày -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var today = new Date().toISOString().split('T')[0];
+        var dateInput = document.getElementById("appointment_date");
+        if (dateInput) {
+            dateInput.setAttribute('min', today);
+        }
+    });
+</script>
+
+{% endblock %}

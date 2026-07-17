@@ -172,6 +172,9 @@
         
         {% if session.get('role') == 'doctor' %}
         <div class="menu-label">Trung Tâm Phân Tích</div>
+        <a href="/screening" class="{% if active_page == 'screening' %}active{% endif %}">
+            <i class="fa-solid fa-shield-halved"></i> Sàng Lọc Tổng Quát
+        </a>
         <a href="/" class="{% if active_page == 'diabetes' %}active{% endif %}">
             <i class="fa-solid fa-droplet"></i> Tiểu Đường
         </a>
@@ -189,6 +192,9 @@
         <div class="menu-label" style="margin-top: 20px;">Dữ Liệu Hệ Thống</div>
         <a href="/history" class="{% if active_page == 'history' %}active{% endif %}">
             <i class="fa-solid fa-clock-rotate-left"></i> Lịch Sử Chẩn Đoán
+        </a>
+        <a href="/appointments" class="{% if active_page == 'appointments' %}active{% endif %}">
+            <i class="fa-solid fa-calendar-check"></i> Lịch Hẹn Khám
         </a>
 
         {% if session.get('user_id') %}

@@ -1,0 +1,674 @@
+{% extends "base.html" %}
+{% set active_page = "screening" %}
+
+{% block content %}
+<style>
+    .screening-container {
+        max-width: 950px;
+        margin: 0 auto;
+    }
+    
+    .screening-desc {
+        color: var(--text-muted);
+        font-size: 14.5px;
+        margin-top: -15px;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+    
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--primary);
+        margin: 15px 0 15px 0;
+        padding-bottom: 8px;
+        border-bottom: 1px dashed #e5e7eb;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Accordion Toggle */
+    .advanced-toggle-btn {
+        width: 100%;
+        background-color: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        color: #374151;
+        padding: 14px 20px;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+        margin: 30px 0 20px 0;
+    }
+    
+    .advanced-toggle-btn:hover {
+        background-color: #e5e7eb;
+        color: #111827;
+    }
+
+    .advanced-toggle-btn i.arrow {
+        transition: transform 0.3s ease;
+    }
+
+    .advanced-toggle-btn.active i.arrow {
+        transform: rotate(180deg);
+    }
+    
+    /* Accordion Panel */
+    .advanced-panel {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease-out, opacity 0.3s ease;
+        opacity: 0;
+    }
+    
+    .advanced-panel.show {
+        max-height: 3000px; /* Bounded size */
+        opacity: 1;
+        margin-bottom: 30px;
+    }
+
+    .panel-inner {
+        padding: 10px 5px;
+    }
+
+    .info-tip {
+        background: rgba(79, 70, 229, 0.04);
+        border-left: 4px solid var(--primary);
+        padding: 12px 16px;
+        border-radius: 0 10px 10px 0;
+        font-size: 13px;
+        color: #4f46e5;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Grid 2 Cột Chuyên Sâu */
+    .advanced-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.6fr;
+        gap: 30px;
+        margin-top: 15px;
+    }
+
+    .advanced-col-left {
+        background: #fdfdfd;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #f0f0f0;
+    }
+
+    .advanced-col-right {
+        background: #fdfdfd;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #f0f0f0;
+    }
+    
+    .form-grid-single {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .form-grid-double {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+        .advanced-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+    }
+
+    /* PDF Digitization Area Styles */
+    .digitize-container {
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(99, 102, 241, 0.02) 100%);
+        border: 2px dashed #4f46e5;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 25px;
+        transition: all 0.3s ease;
+        text-align: center;
+        position: relative;
+    }
+    .digitize-container:hover {
+        border-color: #3730a3;
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(99, 102, 241, 0.03) 100%);
+    }
+    .upload-btn {
+        background-color: #4f46e5;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+    }
+    .upload-btn:hover {
+        background-color: #4338ca;
+        transform: translateY(-1px);
+    }
+    .upload-btn:active {
+        transform: translateY(1px);
+    }
+    .digitize-loading {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 12px;
+        z-index: 10;
+        transition: all 0.3s ease;
+    }
+    .digitize-toast {
+        display: none;
+        color: white;
+        padding: 14px 20px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 25px;
+        line-height: 1.5;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Smart Alert Reference Styles */
+    .input-alert {
+        border-color: #ef4444 !important;
+        background-color: #fef2f2 !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+    }
+    .alert-tip {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #ef4444;
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: 6px;
+        animation: fadeIn 0.2s ease-in;
+    }
+</style>
+
+<div class="screening-container">
+    <div class="form-title">
+        <i class="fa-solid fa-shield-halved"></i>
+        <h2>Sàng Lọc Sức Khỏe Tổng Quát (Multi-Model AI)</h2>
+    </div>
+    <p class="screening-desc">
+        Hệ thống phân tích đồng thời cả 4 mô hình AI chuyên sâu (XGBoost, CatBoost, Random Forest, LightGBM) để đánh giá nguy cơ Tiểu Đường, Thiếu Máu, Bệnh Gan và Bệnh Thận từ dữ liệu xét nghiệm máu.
+    </p>
+
+    <!-- DIGITIZATION ZONE -->
+    <div id="digitizeToast" class="digitize-toast"></div>
+    
+    <div class="digitize-container">
+        <div class="digitize-content">
+            <i class="fa-solid fa-file-pdf" style="font-size: 40px; color: #ef4444; margin-bottom: 12px; display: inline-block;"></i>
+            <h4 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #1e1b4b;">Số hóa Bệnh án & Tự động điền dữ liệu</h4>
+            <p style="margin: 0 0 18px 0; font-size: 13.5px; color: var(--text-muted); line-height: 1.5; max-width: 600px; margin-left: auto; margin-right: auto;">
+                Tải lên file kết quả xét nghiệm cũ dạng PDF, hệ thống sẽ sử dụng AI để tự động trích xuất các chỉ số máu và điền vào form chỉ trong vài giây.
+            </p>
+            <input type="file" id="pdfUploadInput" accept=".pdf" style="display: none;">
+            <button type="button" id="uploadPdfBtn" class="upload-btn">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Tải lên bệnh án cũ (PDF)
+            </button>
+            <span id="pdfFileName" style="display: block; margin-top: 10px; font-size: 13px; font-weight: 500; color: #10b981;"></span>
+        </div>
+        <div id="digitizeLoading" class="digitize-loading">
+            <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 32px; color: var(--primary);"></i>
+            <span style="font-size: 14px; font-weight: 600; color: #374151;">Đang số hóa bệnh án và trích xuất chỉ số...</span>
+        </div>
+    </div>
+
+    <form action="/predict_screening" method="POST" id="screeningForm">
+        <!-- CHỌN BỆNH NHÂN XÉT NGHIỆM -->
+        <div class="input-group" style="margin-bottom: 25px;">
+            <label style="font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 6px; font-size: 14px;">
+                <i class="fa-solid fa-hospital-user" style="font-size: 16px;"></i> Chọn Bệnh Nhân Xét Nghiệm
+            </label>
+            <select name="patient_id" required style="width: 100%; padding: 14px; border: 1.5px solid #e5e7eb; border-radius: 12px; font-size: 14.5px; outline: none; background-color: #f9fafb; font-family: inherit; color: #111827; box-sizing: border-box; transition: all 0.3s ease;">
+                <option value="">-- Click để chọn bệnh nhân nhận kết quả chẩn đoán --</option>
+                {% for pt in patients %}
+                    <option value="{{ pt.id }}">{{ pt.fullname }} (@{{ pt.username }})</option>
+                {% endfor %}
+            </select>
+            {% if not patients %}
+            <p style="margin: 6px 0 0 0; font-size: 12.5px; color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Chưa có bệnh nhân nào đăng ký tài khoản trên hệ thống.</p>
+            {% endif %}
+        </div>
+
+        <div class="section-title">
+            <i class="fa-solid fa-file-medical"></i> Chỉ Số Cơ Bản Bắt Buộc
+        </div>
+
+        <div class="form-grid">
+            <div class="input-group">
+                <label>Tuổi (Age)</label>
+                <input type="number" name="Age" min="1" max="120" value="45" required placeholder="VD: 45">
+            </div>
+            
+            <div class="input-group">
+                <label>Giới tính</label>
+                <select name="Gender" id="genderSelect" style="padding: 14px 16px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 15px; font-family: inherit; color: #111827; background-color: #f9fafb; transition: all 0.3s ease; outline: none;" required>
+                    <option value="1" selected>Nam (Male)</option>
+                    <option value="0">Nữ (Female)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Glucose - Đường huyết (mg/dL)</label>
+                <input type="number" step="0.1" name="Glucose" min="1" value="100.0" required placeholder="VD: 100.0">
+            </div>
+
+            <div class="input-group">
+                <label>Hemoglobin - Huyết sắc tố (g/dL)</label>
+                <input type="number" step="0.1" name="Hemoglobin" min="1" value="14.0" required placeholder="VD: 14.0">
+            </div>
+
+            <div class="input-group">
+                <label>Huyết áp tâm trương (mmHg)</label>
+                <input type="number" step="0.1" name="BloodPressure" min="10" value="80.0" required placeholder="VD: 80.0">
+            </div>
+
+            <div class="input-group">
+                <label>Chỉ số khối cơ thể (BMI)</label>
+                <input type="number" step="0.1" name="BMI" min="10" value="22.0" required placeholder="VD: 22.0">
+            </div>
+        </div>
+
+        <!-- ACCORDION TÙY CHỌN CHUYÊN SÂU -->
+        <button type="button" class="advanced-toggle-btn" id="toggleAdvancedBtn">
+            <span><i class="fa-solid fa-sliders" style="margin-right: 8px; color: var(--primary);"></i> Cấu hình chỉ số chuyên sâu (Tùy chọn)</span>
+            <i class="fa-solid fa-chevron-down arrow"></i>
+        </button>
+
+        <div class="advanced-panel" id="advancedPanel">
+            <div class="panel-inner">
+                <div class="info-tip">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Các tham số dưới đây đã được điền sẵn giá trị trung bình lý tưởng. Chỉ thay đổi nếu bạn có kết quả xét nghiệm tương ứng.</span>
+                </div>
+
+                <div class="advanced-grid">
+                    <!-- CỘT TRÁI: TIỀN SỬ BỆNH LÝ & TRIỆU CHỨNG -->
+                    <div class="advanced-col-left">
+                        <div class="section-title" style="margin-top: 0;">
+                            <i class="fa-solid fa-notes-medical"></i> Tiền Sử & Triệu Chứng
+                        </div>
+                        <div class="form-grid-single">
+                            <!-- pregnancies -->
+                            <div class="input-group" id="pregnanciesGroup">
+                                <label>Số lần mang thai (Pregnancies)</label>
+                                <input type="number" name="Pregnancies" min="0" value="0">
+                            </div>
+
+                            <!-- htn -->
+                            <div class="input-group">
+                                <label>Có Tăng huyết áp không? (htn)</label>
+                                <select name="htn" style="padding: 14px 16px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14.5px; font-family: inherit; color: #111827; background-color: #f9fafb; transition: all 0.3s ease; outline: none;">
+                                    <option value="0" selected>Không (No)</option>
+                                    <option value="1">Có (Yes)</option>
+                                </select>
+                            </div>
+
+                            <!-- dm -->
+                            <div class="input-group">
+                                <label>Có Tiền sử tiểu đường không? (dm)</label>
+                                <select name="dm" style="padding: 14px 16px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14.5px; font-family: inherit; color: #111827; background-color: #f9fafb; transition: all 0.3s ease; outline: none;">
+                                    <option value="0" selected>Không (No)</option>
+                                    <option value="1">Có (Yes)</option>
+                                </select>
+                            </div>
+
+                            <!-- cad -->
+                            <div class="input-group">
+                                <label>Có Bệnh mạch vành không? (cad)</label>
+                                <select name="cad" style="padding: 14px 16px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14.5px; font-family: inherit; color: #111827; background-color: #f9fafb; transition: all 0.3s ease; outline: none;">
+                                    <option value="0" selected>Không (No)</option>
+                                    <option value="1">Có (Yes)</option>
+                                </select>
+                            </div>
+
+                            <!-- appet -->
+                            <div class="input-group">
+                                <label>Trạng thái thèm ăn (appet)</label>
+                                <select name="appet" style="padding: 14px 16px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14.5px; font-family: inherit; color: #111827; background-color: #f9fafb; transition: all 0.3s ease; outline: none;">
+                                    <option value="1" selected>Ngon miệng (Good)</option>
+                                    <option value="0">Chán ăn (Poor)</option>
+                                </select>
+                            </div>
+
+                            <!-- pe -->
+                            <div class="input-group">
+                                <label>Có triệu chứng Phù chân không? (pe)</label>
+                                <select name="pe" style="padding: 14px 16px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14.5px; font-family: inherit; color: #111827; background-color: #f9fafb; transition: all 0.3s ease; outline: none;">
+                                    <option value="0" selected>Không (No)</option>
+                                    <option value="1">Có (Yes)</option>
+                                </select>
+                            </div>
+
+                            <!-- ane -->
+                            <div class="input-group">
+                                <label>Có triệu chứng Thiếu máu không? (ane)</label>
+                                <select name="ane" style="padding: 14px 16px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14.5px; font-family: inherit; color: #111827; background-color: #f9fafb; transition: all 0.3s ease; outline: none;">
+                                    <option value="0" selected>Không (No)</option>
+                                    <option value="1">Có (Yes)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CỘT PHẢI: CHỈ SỐ XXét NGHIỆM CHUYÊN SÂU -->
+                    <div class="advanced-col-right">
+                        <div class="section-title" style="margin-top: 0;">
+                            <i class="fa-solid fa-flask"></i> Chỉ Số Xét Nghiệm
+                        </div>
+                        <div class="form-grid-double">
+                            <!-- Huyết học -->
+                            <div class="input-group"><label>MCV - Hồng cầu (fL)</label><input type="number" step="0.1" name="MCV" value="90.0" required></div>
+                            <div class="input-group"><label>MCH - Lượng Hb (pg)</label><input type="number" step="0.1" name="MCH" value="28.0" required></div>
+                            <div class="input-group"><label>MCHC - Nồng độ Hb</label><input type="number" step="0.1" name="MCHC" value="33.0" required></div>
+                            
+                            <!-- Chức năng gan -->
+                            <div class="input-group"><label>Bilirubin toàn phần</label><input type="number" step="0.1" name="Total_Bilirubin" value="1.0" required></div>
+                            <div class="input-group"><label>Bilirubin trực tiếp</label><input type="number" step="0.1" name="Direct_Bilirubin" value="0.3" required></div>
+                            <div class="input-group"><label>Alkaline Phosphotase</label><input type="number" step="0.1" name="Alkaline_Phosphotase" value="187.0" required></div>
+                            <div class="input-group"><label>ALT (U/L)</label><input type="number" step="0.1" name="Alamine_Aminotransferase" value="16.0" required></div>
+                            <div class="input-group"><label>AST (U/L)</label><input type="number" step="0.1" name="Aspartate_Aminotransferase" value="18.0" required></div>
+                            <div class="input-group"><label>Protein toàn phần</label><input type="number" step="0.1" name="Total_Protiens" value="6.8" required></div>
+                            <div class="input-group"><label>Albumin huyết (g/dL)</label><input type="number" step="0.1" name="Albumin" value="3.3" required></div>
+                            <div class="input-group"><label>Tỉ lệ Alb/Glob</label><input type="number" step="0.01" name="Albumin_and_Globulin_Ratio" value="0.9" required></div>
+                            
+                            <!-- Chức năng thận -->
+                            <div class="input-group"><label>Tỷ trọng nước tiểu (sg)</label><input type="number" step="0.001" name="sg" value="1.020" required></div>
+                            <div class="input-group"><label>Albumin niệu (al 0-5)</label><input type="number" step="1" name="al" min="0" max="5" value="0" required></div>
+                            <div class="input-group"><label>Đường niệu (su 0-5)</label><input type="number" step="1" name="su" min="0" max="5" value="0" required></div>
+                            <div class="input-group"><label>Ure máu - Blood Urea</label><input type="number" step="0.1" name="bu" value="36.0" required></div>
+                            <div class="input-group"><label>Creatinine (sc)</label><input type="number" step="0.1" name="sc" value="1.2" required></div>
+                            <div class="input-group"><label>Natri - Sodium (mEq/L)</label><input type="number" step="0.1" name="sod" value="135.0" required></div>
+                            <div class="input-group"><label>Kali - Potassium</label><input type="number" step="0.1" name="pot" value="4.5" required></div>
+                            <div class="input-group"><label>Thể tích HC (pcv - %)</label><input type="number" step="0.1" name="pcv" value="44.0" required></div>
+                            <div class="input-group"><label>Số lượng BC (wc)</label><input type="number" step="1" name="wc" value="7800" required></div>
+                            <div class="input-group"><label>Số lượng HC (rc)</label><input type="number" step="0.1" name="rc" value="5.2" required></div>
+                            
+                            <!-- Dropdown đặc thù nước tiểu -->
+                            <div class="input-group">
+                                <label>Hồng cầu niệu (rbc)</label>
+                                <select name="rbc" style="padding: 12px 14px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14px; outline: none; background-color: #f9fafb; font-family: inherit; color: #111827;">
+                                    <option value="1" selected>Bình thường</option>
+                                    <option value="0">Bất thường</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Tế bào mủ (pc)</label>
+                                <select name="pc" style="padding: 12px 14px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14px; outline: none; background-color: #f9fafb; font-family: inherit; color: #111827;">
+                                    <option value="1" selected>Bình thường</option>
+                                    <option value="0">Bất thường</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Cụm TB mủ (pcc)</label>
+                                <select name="pcc" style="padding: 12px 14px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14px; outline: none; background-color: #f9fafb; font-family: inherit; color: #111827;">
+                                    <option value="0" selected>Không có</option>
+                                    <option value="1">Có</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Vi khuẩn niệu (ba)</label>
+                                <select name="ba" style="padding: 12px 14px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 14px; outline: none; background-color: #f9fafb; font-family: inherit; color: #111827;">
+                                    <option value="0" selected>Không có</option>
+                                    <option value="1">Có</option>
+                                </select>
+                            </div>
+
+                            <!-- Chỉ số tiểu đường phụ -->
+                            <div class="input-group"><label>Độ dày nếp da (mm)</label><input type="number" step="0.1" name="SkinThickness" value="20.0" required></div>
+                            <div class="input-group"><label>Insulin (mu U/ml)</label><input type="number" step="0.1" name="Insulin" value="79.0" required></div>
+                            <div class="input-group"><label>Tiền sử gia đình (DPF)</label><input type="number" step="0.01" name="DiabetesPedigreeFunction" value="0.47" required></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-submit" style="margin-top: 10px;">
+            <i class="fa-solid fa-shield-halved"></i> SÀNG LỌC NGAY
+        </button>
+    </form>
+</div>
+
+<script>
+    // JS Accordion Toggle
+    const toggleBtn = document.getElementById('toggleAdvancedBtn');
+    const panel = document.getElementById('advancedPanel');
+    
+    toggleBtn.addEventListener('click', function() {
+        this.classList.toggle('active');
+        panel.classList.toggle('show');
+    });
+
+    // Tự động vô hiệu hóa/ẩn Số lần mang thai nếu Giới tính là Nam
+    const genderSelect = document.getElementById('genderSelect');
+    const pregnanciesGroup = document.getElementById('pregnanciesGroup');
+    const pregnanciesInput = pregnanciesGroup.querySelector('input');
+
+    function handleGenderChange() {
+        if (genderSelect.value === "1") { // Nam
+            pregnanciesInput.value = 0;
+            pregnanciesGroup.style.opacity = "0.5";
+            pregnanciesInput.disabled = true;
+        } else {
+            pregnanciesGroup.style.opacity = "1";
+            pregnanciesInput.disabled = false;
+        }
+    }
+
+    genderSelect.addEventListener('change', handleGenderChange);
+    // Chạy khi khởi động trang
+    handleGenderChange();
+
+    // PDF Digitization Script
+    const uploadPdfBtn = document.getElementById('uploadPdfBtn');
+    const pdfUploadInput = document.getElementById('pdfUploadInput');
+    const digitizeLoading = document.getElementById('digitizeLoading');
+    const pdfFileName = document.getElementById('pdfFileName');
+    const digitizeToast = document.getElementById('digitizeToast');
+    const screeningForm = document.getElementById('screeningForm');
+
+    uploadPdfBtn.addEventListener('click', () => {
+        pdfUploadInput.click();
+    });
+
+    pdfUploadInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        pdfFileName.textContent = `Tệp đã chọn: ${file.name}`;
+        
+        const formData = new FormData();
+        formData.append('pdf_file', file);
+
+        // Show loading spinner
+        digitizeLoading.style.display = 'flex';
+        digitizeToast.style.display = 'none';
+
+        try {
+            const response = await fetch('/digitize_pdf', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            
+            if (response.ok && data.status === 'success') {
+                const extData = data.extracted_data;
+                const fieldsFilled = [];
+
+                // Populate values in the form
+                for (const [key, val] of Object.entries(extData)) {
+                    const inputElement = screeningForm.querySelector(`[name="${key}"]`);
+                    if (inputElement) {
+                        inputElement.value = val;
+                        // For select inputs, make sure selection is updated
+                        if (inputElement.tagName === 'SELECT') {
+                            inputElement.dispatchEvent(new Event('change'));
+                        }
+                        
+                        // Human readable names for message
+                        let VietnameseName = key;
+                        if (key === 'Age') VietnameseName = 'Tuổi';
+                        else if (key === 'Gender') VietnameseName = 'Giới tính';
+                        else if (key === 'Glucose') VietnameseName = 'Đường huyết';
+                        else if (key === 'Hemoglobin') VietnameseName = 'Huyết sắc tố';
+                        else if (key === 'BloodPressure') VietnameseName = 'Huyết áp';
+                        else if (key === 'BMI') VietnameseName = 'BMI';
+                        else if (key === 'sc') VietnameseName = 'Creatinine';
+                        else if (key === 'bu') VietnameseName = 'Ure';
+                        else if (key === 'Total_Bilirubin') VietnameseName = 'Bilirubin toàn phần';
+                        
+                        fieldsFilled.push(VietnameseName);
+                    }
+                }
+
+                // If any field populated, show toast
+                if (fieldsFilled.length > 0) {
+                    digitizeToast.style.backgroundColor = '#10b981'; // Green
+                    digitizeToast.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>Số hóa thành công!</strong> Đã tự động điền ${fieldsFilled.length} chỉ số: ${fieldsFilled.join(', ')}.`;
+                } else {
+                    digitizeToast.style.backgroundColor = '#f59e0b'; // Yellow
+                    digitizeToast.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <strong>Cảnh báo:</strong> Đọc thành công nhưng không tìm thấy chỉ số máu tương ứng trong tệp PDF.`;
+                }
+                digitizeToast.style.display = 'block';
+                
+                // Re-run handleGenderChange in case Gender was changed
+                handleGenderChange();
+                
+                // Run validation on all fields
+                screeningForm.querySelectorAll('input, select').forEach(el => validateField(el));
+
+            } else {
+                digitizeToast.style.backgroundColor = '#ef4444'; // Red
+                digitizeToast.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> <strong>Thất bại:</strong> ${data.message || 'Lỗi xử lý file PDF.'}`;
+                digitizeToast.style.display = 'block';
+            }
+        } catch (error) {
+            digitizeToast.style.backgroundColor = '#ef4444'; // Red
+            digitizeToast.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> <strong>Lỗi kết nối:</strong> Không thể kết nối tới server.`;
+            digitizeToast.style.display = 'block';
+        } finally {
+            digitizeLoading.style.display = 'none';
+            // Reset input so change event fires again if user uploads same file
+            pdfUploadInput.value = '';
+        }
+    });
+
+    // clinical reference ranges dictionary: { min, max, label }
+    const referenceRanges = {
+        'Glucose': { min: 70, max: 125.9, desc: 'Bình thường: 70 - 125 mg/dL' },
+        'Hemoglobin': { min: 12.0, max: 17.5, desc: 'Bình thường: 12.0 - 17.5 g/dL' },
+        'BloodPressure': { min: 60, max: 89.9, desc: 'Bình thường: 60 - 89 mmHg' },
+        'BMI': { min: 18.5, max: 24.9, desc: 'Bình thường: 18.5 - 24.9' },
+        'MCV': { min: 80, max: 100, desc: 'Bình thường: 80 - 100 fL' },
+        'MCH': { min: 27, max: 32, desc: 'Bình thường: 27 - 32 pg' },
+        'MCHC': { min: 32, max: 36, desc: 'Bình thường: 32 - 36 g/dL' },
+        'Total_Bilirubin': { max: 1.2, desc: 'Bình thường: <= 1.2 mg/dL' },
+        'Direct_Bilirubin': { max: 0.3, desc: 'Bình thường: <= 0.3 mg/dL' },
+        'Alkaline_Phosphotase': { min: 44, max: 147, desc: 'Bình thường: 44 - 147 U/L' },
+        'Alamine_Aminotransferase': { max: 56, desc: 'Bình thường: <= 56 U/L' },
+        'Aspartate_Aminotransferase': { max: 40, desc: 'Bình thường: <= 40 U/L' },
+        'Total_Protiens': { min: 6.0, max: 8.3, desc: 'Bình thường: 6.0 - 8.3 g/dL' },
+        'Albumin': { min: 3.5, max: 5.0, desc: 'Bình thường: 3.5 - 5.0 g/dL' },
+        'Albumin_and_Globulin_Ratio': { min: 1.0, max: 2.0, desc: 'Bình thường: 1.0 - 2.0' },
+        'sg': { min: 1.005, max: 1.030, desc: 'Bình thường: 1.005 - 1.030' },
+        'al': { max: 0, desc: 'Bình thường: 0 (Không có)' },
+        'su': { max: 0, desc: 'Bình thường: 0 (Không có)' },
+        'bu': { min: 7, max: 45, desc: 'Bình thường: 7 - 45 mg/dL' },
+        'sc': { min: 0.6, max: 1.2, desc: 'Bình thường: 0.6 - 1.2 mg/dL' },
+        'sod': { min: 135, max: 145, desc: 'Bình thường: 135 - 145 mEq/L' },
+        'pot': { min: 3.5, max: 5.0, desc: 'Bình thường: 3.5 - 5.0 mEq/L' },
+        'pcv': { min: 37, max: 50, desc: 'Bình thường: 37 - 50 %' },
+        'wc': { min: 4000, max: 11000, desc: 'Bình thường: 4000 - 11000 /mcL' },
+        'rc': { min: 4.2, max: 5.9, desc: 'Bình thường: 4.2 - 5.9 M/mcL' },
+        'SkinThickness': { min: 10, max: 40, desc: 'Bình thường: 10 - 40 mm' },
+        'Insulin': { min: 2.6, max: 24.9, desc: 'Bình thường: 2.6 - 24.9 uIU/mL' },
+        'DiabetesPedigreeFunction': { max: 0.8, desc: 'Bình thường: <= 0.8' }
+    };
+
+    function validateField(input) {
+        const name = input.name;
+        if (!referenceRanges[name]) return;
+
+        const val = parseFloat(input.value);
+        const range = referenceRanges[name];
+        
+        let isAlert = false;
+        if (isNaN(val)) {
+            isAlert = false;
+        } else {
+            if (range.min !== undefined && val < range.min) {
+                isAlert = true;
+            }
+            if (range.max !== undefined && val > range.max) {
+                isAlert = true;
+            }
+        }
+
+        const parent = input.closest('.input-group');
+        if (!parent) return;
+
+        let existingAlert = parent.querySelector('.alert-tip');
+
+        if (isAlert) {
+            input.classList.add('input-alert');
+            if (!existingAlert) {
+                const tip = document.createElement('span');
+                tip.className = 'alert-tip';
+                tip.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <strong>Ngoài ngưỡng</strong> (${range.desc})`;
+                parent.appendChild(tip);
+            }
+        } else {
+            input.classList.remove('input-alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+        }
+    }
+
+    // Bind event listeners to input/change
+    screeningForm.querySelectorAll('input, select').forEach(el => {
+        el.addEventListener('input', () => validateField(el));
+        el.addEventListener('change', () => validateField(el));
+        // Run initial validation
+        validateField(el);
+    });
+</script>
+{% endblock %}

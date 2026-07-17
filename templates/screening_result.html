@@ -1,0 +1,482 @@
+{% extends "base.html" %}
+{% set active_page = "screening" %}
+
+{% block content %}
+<style>
+    .report-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 10px 0;
+    }
+    
+    .report-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 25px;
+        border-bottom: 2px solid #f3f4f6;
+        padding-bottom: 15px;
+    }
+    
+    .report-header i {
+        font-size: 26px;
+        color: var(--primary);
+    }
+    
+    .report-header h2 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    /* Overall Health Alert Card */
+    .status-card {
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 35px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+        border: 2px solid;
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
+        animation: slideIn 0.5s ease-out;
+    }
+    
+    .status-card-green {
+        background-color: #f0fdf4;
+        border-color: #bbf7d0;
+        color: #166534;
+    }
+    
+    .status-card-yellow {
+        background-color: #fffbeb;
+        border-color: #fde68a;
+        color: #92400e;
+    }
+    
+    .status-card-red {
+        background-color: #fef2f2;
+        border-color: #fecaca;
+        color: #991b1b;
+    }
+
+    .status-icon-wrapper {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        flex-shrink: 0;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    
+    .status-card-green .status-icon-wrapper {
+        background-color: #dcfce7;
+        color: #15803d;
+    }
+    
+    .status-card-yellow .status-icon-wrapper {
+        background-color: #fef3c7;
+        color: #b45309;
+    }
+    
+    .status-card-red .status-icon-wrapper {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .status-info {
+        flex: 1;
+    }
+
+    .status-label {
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0.85;
+        margin-bottom: 4px;
+    }
+
+    .status-title {
+        font-size: 24px;
+        font-weight: 800;
+        margin: 0 0 10px 0;
+        letter-spacing: 0.5px;
+    }
+
+    .status-description {
+        font-size: 14.5px;
+        line-height: 1.6;
+        margin: 0;
+        opacity: 0.95;
+    }
+
+    /* Detailed Table */
+    .table-section {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        padding: 24px;
+        margin-bottom: 35px;
+        box-shadow: var(--card-shadow);
+    }
+    
+    .table-section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 18px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .table-section-title i {
+        color: var(--primary);
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .report-table th {
+        color: #4b5563;
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 12px 16px;
+        border-bottom: 1.5px solid #e5e7eb;
+    }
+
+    .report-table td {
+        padding: 16px;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 14px;
+        vertical-align: middle;
+    }
+
+    .report-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .disease-cell {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .disease-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+    }
+
+    .icon-diabetes { background: rgba(79, 70, 229, 0.1); color: var(--primary); }
+    .icon-anemia { background: rgba(236, 72, 153, 0.1); color: #ec4899; }
+    .icon-liver { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .icon-kidney { background: rgba(6, 182, 212, 0.1); color: #06b6d4; }
+
+    /* Probability Progress Bar */
+    .prob-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 180px;
+    }
+
+    .prob-bar-bg {
+        flex: 1;
+        height: 8px;
+        background-color: #f3f4f6;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .prob-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+    }
+
+    .prob-text {
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        width: 45px;
+        text-align: right;
+    }
+
+    /* Input summary grid */
+    .input-summary-card {
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 35px;
+    }
+
+    .input-summary-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        margin-top: 0;
+        margin-bottom: 12px;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 6px;
+    }
+
+    .input-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+    }
+
+    .input-summary-item {
+        font-size: 13px;
+        color: #4b5563;
+    }
+
+    .input-summary-item strong {
+        color: #111827;
+    }
+
+    /* Actions buttons */
+    .actions-bar {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .btn-action-report {
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-back-report {
+        background-color: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+    
+    .btn-back-report:hover {
+        background-color: #e5e7eb;
+        transform: translateY(-2px);
+    }
+
+    .btn-appointment-report {
+        background-color: #10b981;
+        color: white;
+        box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+    }
+    
+    .btn-appointment-report:hover {
+        background-color: #059669;
+        box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .btn-history-report {
+        background-color: var(--primary);
+        color: white;
+        box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+    }
+
+    .btn-history-report:hover {
+        background-color: var(--primary-hover);
+        box-shadow: 0 6px 15px rgba(79, 70, 229, 0.3);
+        transform: translateY(-2px);
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateY(15px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+</style>
+
+<div class="report-container">
+    <div class="report-header">
+        <i class="fa-solid fa-clipboard-list"></i>
+        <h2>Báo Cáo Kết Quả Sàng Lọc Sức Khỏe Tổng Quát</h2>
+    </div>
+
+    <!-- BANNER CẢNH BÁO MÃ MÀU -->
+    <div class="status-card status-card-{{ status_color }}">
+        <div class="status-icon-wrapper">
+            {% if status_color == 'green' %}
+                <i class="fa-solid fa-heart-pulse"></i>
+            {% elif status_color == 'yellow' %}
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            {% else %}
+                <i class="fa-solid fa-circle-exclamation"></i>
+            {% endif %}
+        </div>
+        
+        <div class="status-info">
+            <div class="status-label">Trạng thái chẩn đoán cho: {{ patient_name }}</div>
+            <h3 class="status-title">{{ status_text }}</h3>
+            <p class="status-description">{{ status_desc }}</p>
+        </div>
+    </div>
+
+    <!-- BẢNG CHI TIẾT 4 MÔ HÌNH AI -->
+    <div class="table-section">
+        <h4 class="table-section-title">
+            <i class="fa-solid fa-brain"></i> Chi tiết đánh giá từ các mô hình AI
+        </h4>
+        <div style="overflow-x: auto;">
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Bệnh Lý Sàng Lọc</th>
+                        <th style="width: 25%;">Thuật Toán AI Sử Dụng</th>
+                        <th style="width: 30%;">Xác Suất Nguy Cơ</th>
+                        <th style="width: 20%;">Đánh Giá Chuyên Khoa</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ds in diseases %}
+                    <tr>
+                        <td>
+                            <div class="disease-cell">
+                                <div class="disease-icon {% if ds.name == 'Tiểu Đường' %}icon-diabetes{% elif ds.name == 'Thiếu Máu' %}icon-anemia{% elif ds.name == 'Bệnh Gan' %}icon-liver{% else %}icon-kidney{% endif %}">
+                                    {% if ds.name == 'Tiểu Đường' %}
+                                        <i class="fa-solid fa-droplet"></i>
+                                    {% elif ds.name == 'Thiếu Máu' %}
+                                        <i class="fa-solid fa-vial-virus"></i>
+                                    {% elif ds.name == 'Bệnh Gan' %}
+                                        <i class="fa-solid fa-lungs"></i>
+                                    {% else %}
+                                        <i class="fa-solid fa-shield-virus"></i>
+                                    {% endif %}
+                                </div>
+                                <span>{{ ds.name }}</span>
+                            </div>
+                        </td>
+                        <td style="color: var(--text-muted); font-weight: 500;">
+                            {{ ds.model_name }}
+                        </td>
+                        <td>
+                            <div class="prob-container">
+                                <div class="prob-bar-bg">
+                                    <div class="prob-bar-fill" style="width: {{ ds.prob }}%; background-color: {% if ds.pred == 1 %}#ef4444{% else %}#10b981{% endif %};"></div>
+                                </div>
+                                <span class="prob-text">{{ ds.prob }}%</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if ds.pred == 1 %}
+                                <span class="result-badge result-risk" style="display: inline-flex;">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> Có Nguy Cơ
+                                </span>
+                            {% else %}
+                                <span class="result-badge result-normal" style="display: inline-flex;">
+                                    <i class="fa-solid fa-circle-check"></i> Bình Thường
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- AUTO-NOTE GENERATOR CARD -->
+    <div class="result-card" style="background: white; border-radius: 16px; border: 1px solid #e5e7eb; border-left: 5px solid #10b981; padding: 24px; margin-bottom: 35px; box-shadow: var(--card-shadow); animation: slideIn 0.5s ease-out;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-file-signature" style="font-size: 22px; color: #10b981;"></i>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #111827;">Tóm Tắt Bệnh Án Tự Động (Auto-Note Generator)</h3>
+            </div>
+            <button id="copyNoteBtn" class="btn-action-report" style="background-color: #10b981; color: white; padding: 8px 16px; font-size: 13.5px; box-shadow: 0 2px 5px rgba(16, 185, 129, 0.15); border-radius: 8px; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                <i class="fa-regular fa-copy"></i> Sao chép tóm tắt
+            </button>
+        </div>
+        
+        <div style="position: relative;">
+            <textarea id="autoNoteArea" readonly style="width: 100%; min-height: 90px; padding: 14px; border-radius: 10px; border: 1px solid #d1d5db; background-color: #f9fafb; font-family: inherit; font-size: 14px; color: #374151; line-height: 1.6; resize: none; outline: none; box-sizing: border-box; transition: border-color 0.2s;">{{ auto_note }}</textarea>
+        </div>
+        <div id="copyToast" style="display: none; color: #10b981; font-size: 12.5px; font-weight: 600; margin-top: 8px; animation: fadeIn 0.2s;">
+            <i class="fa-solid fa-circle-check"></i> Đã sao chép vào bộ nhớ tạm!
+        </div>
+    </div>
+
+    <!-- TÓM TẮT CHỈ SỐ ĐÃ NHẬP -->
+    <div class="input-summary-card">
+        <h4 class="input-summary-title">Chỉ số sinh học đầu vào của bệnh nhân:</h4>
+        <div class="input-summary-grid">
+            {% for key, val in input_summary.items() %}
+                <div class="input-summary-item">
+                    <strong>{{ key }}:</strong> {{ val }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- THANH HÀNH ĐỘNG -->
+    <div class="actions-bar">
+        <a href="/screening" class="btn-action-report btn-back-report">
+            <i class="fa-solid fa-arrow-left"></i> Sàng lọc ca mới
+        </a>
+        
+        {% if status_color != 'green' %}
+        <a href="/appointments" class="btn-action-report btn-appointment-report">
+            <i class="fa-solid fa-calendar-check"></i> Đặt lịch hẹn bác sĩ
+        </a>
+        {% endif %}
+        
+        <a href="/history" class="btn-action-report btn-history-report">
+            Xem lịch sử khám <i class="fa-solid fa-arrow-right"></i>
+        </a>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const copyNoteBtn = document.getElementById('copyNoteBtn');
+        const autoNoteArea = document.getElementById('autoNoteArea');
+        const copyToast = document.getElementById('copyToast');
+        
+        if (copyNoteBtn && autoNoteArea) {
+            copyNoteBtn.addEventListener('click', function() {
+                autoNoteArea.select();
+                autoNoteArea.setSelectionRange(0, 99999); /* For mobile devices */
+                navigator.clipboard.writeText(autoNoteArea.value).then(() => {
+                    copyToast.style.display = 'block';
+                    setTimeout(() => {
+                        copyToast.style.display = 'none';
+                    }, 2000);
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}
