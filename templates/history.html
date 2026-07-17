@@ -339,6 +339,13 @@
                     {% else %}
                         <span class="badge">{{ pred.disease_type }}</span>
                     {% endif %}
+                    {% if pred.pdf_file %}
+                        <div style="margin-top: 8px;">
+                            <a href="/static/uploads/pdfs/{{ pred.pdf_file }}" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px;">
+                                <i class="fa-solid fa-file-pdf" style="color: #ef4444; font-size: 14px;"></i> Xem Bệnh Án
+                            </a>
+                        </div>
+                    {% endif %}
                 </td>
                 <td style="font-size: 14.5px;">
                     {% if session.get('role') == 'doctor' %}

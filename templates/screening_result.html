@@ -327,6 +327,20 @@
         <h2>Báo Cáo Kết Quả Sàng Lọc Sức Khỏe Tổng Quát</h2>
     </div>
 
+    {% if sms_sent %}
+    <div style="background: rgba(16, 185, 129, 0.08); border: 1.5px solid #10b981; border-radius: 16px; padding: 18px 24px; margin-bottom: 25px; display: flex; align-items: center; gap: 15px; animation: slideIn 0.5s ease-out; text-align: left;">
+        <div style="width: 42px; height: 42px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; box-shadow: 0 4px 8px rgba(16, 185, 129, 0.2);">
+            <i class="fa-solid fa-comment-sms"></i>
+        </div>
+        <div style="flex: 1;">
+            <div style="font-size: 14.5px; font-weight: 700; color: #111827; margin-bottom: 4px;">Đã tự động gửi SMS thông báo tới bệnh nhân!</div>
+            <div style="font-size: 13px; color: #374151; font-family: monospace; background: rgba(255, 255, 255, 0.6); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2); margin-top: 6px; line-height: 1.4;">
+                <strong>Nội dung SMS (đến {{ sms_phone }}):</strong> "{{ sms_message }}"
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- BANNER CẢNH BÁO MÃ MÀU -->
     <div class="status-card status-card-{{ status_color }}">
         <div class="status-icon-wrapper">
@@ -453,6 +467,10 @@
         </a>
         {% endif %}
         
+        <button type="button" class="btn-action-report btn-appointment-report" id="printExamReportBtn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            <i class="fa-solid fa-print"></i> In Phiếu Khám Bệnh
+        </button>
+        
         <a href="/history" class="btn-action-report btn-history-report">
             Xem lịch sử khám <i class="fa-solid fa-arrow-right"></i>
         </a>
@@ -460,6 +478,247 @@
 </div>
 
 <script>
+    // Global function to print medical record / exam slip
+    window.printExaminationResult = function() {
+        const loginUrl = window.location.origin + '/login';
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(loginUrl)}`;
+        
+        // Gather info from page
+        const patientName = "{{ patient_name }}";
+        const patientDob = "{{ patient.dob if (patient and patient.dob) else 'Chưa cập nhật' }}";
+        const patientPhone = "{{ patient.phone if (patient and patient.phone) else 'Chưa cập nhật' }}";
+        const examDate = new Date().toLocaleDateString('vi-VN');
+        
+        const autoNote = document.getElementById('autoNoteArea').value;
+        
+        // Extract table rows
+        let rowsHtml = '';
+        const rows = document.querySelectorAll('.report-table tbody tr');
+        rows.forEach(tr => {
+            const disease = tr.querySelector('.disease-cell span').innerText.trim();
+            const model = tr.querySelector('td:nth-child(2)').innerText.trim();
+            const prob = tr.querySelector('.prob-text').innerText.trim();
+            const eval = tr.querySelector('td:nth-child(4)').innerText.trim();
+            const isRisk = eval.includes('Có Nguy Cơ');
+            const evalStyle = isRisk ? 'color: #ef4444; font-weight: bold;' : 'color: #10b981; font-weight: bold;';
+            
+            rowsHtml += `
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: 600;">${disease}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: #4b5563;">${model}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: 600; text-align: center;">${prob}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right; ${evalStyle}">${eval}</td>
+                </tr>
+            `;
+        });
+        
+        const username = "{{ patient.username if patient else '' }}";
+        const tempPassword = "{{ temp_password if temp_password else '' }}";
+        
+        let credentialsHtml = '';
+        if (username) {
+            credentialsHtml = `
+                <div class="credentials-card" style="margin-top: 25px; border: 2px dashed #4f46e5; border-radius: 12px; padding: 20px; background: #f5f3ff; text-align: left; display: flex; align-items: center; gap: 20px;">
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0 0 10px 0; color: #4f46e5; font-size: 15px; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+                            🔑 THÔNG TIN ĐĂNG NHẬP & BẢO MẬT BỆNH NHÂN
+                        </h3>
+                        <div style="margin-bottom: 8px; font-size: 13.5px; color: #1f2937;">
+                            <strong>Tên đăng nhập (Username):</strong> 
+                            <code style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-family: monospace; font-size: 14px;">${username}</code>
+                        </div>
+                        <div style="margin-bottom: 8px; font-size: 13.5px; color: #1f2937;">
+                            <strong>Mật khẩu đăng nhập:</strong> 
+                            ${tempPassword ? `<code style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-family: monospace; font-size: 14px;">${tempPassword}</code>` : `<span style="color: #4b5563; font-style: italic;">[Mật khẩu bảo mật cá nhân của bạn]</span>`}
+                        </div>
+                        ${tempPassword ? `
+                        <div style="color: #b45309; font-size: 12px; font-weight: 600; margin-top: 6px;">
+                            ⚠️ Bắt buộc phải đổi mật khẩu mới trong lần đăng nhập đầu tiên để kích hoạt bảo mật.
+                        </div>` : ''}
+                    </div>
+                    <div style="text-align: center; flex-shrink: 0;">
+                        <img src="${qrCodeUrl}" style="width: 100px; height: 100px; border: 1px solid #e5e7eb; border-radius: 6px; padding: 4px; background: white;">
+                        <div style="font-size: 10px; color: #4f46e5; font-weight: 600; margin-top: 4px;">Quét QR đăng nhập</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        const printWindow = window.open('', '_blank', 'width=800,height=800');
+        if (!printWindow) {
+            alert("Không thể mở cửa sổ in. Vui lòng tắt trình chặn popup của trình duyệt.");
+            return;
+        }
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Phiếu Kết Quả Sàng Lọc Sức Khỏe - ${patientName}</title>
+                <style>
+                    body {
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        padding: 40px;
+                        color: #333;
+                        line-height: 1.5;
+                    }
+                    .header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        border-bottom: 2px solid #333;
+                        padding-bottom: 15px;
+                        margin-bottom: 25px;
+                    }
+                    .header-left h1 {
+                        font-size: 24px;
+                        margin: 0;
+                        color: #111827;
+                    }
+                    .header-left p {
+                        margin: 5px 0 0 0;
+                        font-size: 12px;
+                        color: #6b7280;
+                    }
+                    .header-right {
+                        text-align: right;
+                        font-size: 12px;
+                        color: #4b5563;
+                    }
+                    h2 {
+                        text-align: center;
+                        font-size: 20px;
+                        margin-top: 10px;
+                        margin-bottom: 25px;
+                        color: #111827;
+                        letter-spacing: 0.5px;
+                    }
+                    .patient-info {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 15px;
+                        background: #f9fafb;
+                        padding: 15px 20px;
+                        border-radius: 10px;
+                        border: 1px solid #e5e7eb;
+                        margin-bottom: 25px;
+                        font-size: 13.5px;
+                    }
+                    .table-title {
+                        font-size: 15px;
+                        font-weight: bold;
+                        margin-bottom: 10px;
+                        color: #111827;
+                        border-left: 4px solid #10b981;
+                        padding-left: 8px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 25px;
+                        font-size: 13.5px;
+                    }
+                    th {
+                        background-color: #f3f4f6;
+                        padding: 10px;
+                        font-weight: bold;
+                        text-align: left;
+                        border-bottom: 2px solid #d1d5db;
+                    }
+                    .note-section {
+                        background-color: #fcfdfd;
+                        border-left: 4px solid #10b981;
+                        padding: 15px 20px;
+                        border-radius: 0 10px 10px 0;
+                        border-top: 1px solid #e5e7eb;
+                        border-right: 1px solid #e5e7eb;
+                        border-bottom: 1px solid #e5e7eb;
+                        margin-bottom: 25px;
+                        font-size: 13.5px;
+                        line-height: 1.6;
+                    }
+                    .signatures {
+                        display: flex;
+                        justify-content: space-between;
+                        margin-top: 40px;
+                        padding: 0 20px;
+                        font-size: 13.5px;
+                    }
+                    @media print {
+                        body {
+                            padding: 0;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div class="header-left">
+                        <h1>BLOODCARE AI</h1>
+                        <p>Hệ thống Hỗ trợ Chẩn đoán Sàng lọc Sinh hóa Máu thông minh</p>
+                    </div>
+                    <div class="header-right">
+                        <strong>Mã số kết quả:</strong> ${Math.floor(100000 + Math.random() * 900000)}<br>
+                        <strong>Ngày khám:</strong> ${examDate}
+                    </div>
+                </div>
+                
+                <h2>PHIẾU KẾT QUẢ SÀNG LỌC SỨC KHỎE TỔNG QUÁT</h2>
+                
+                <div class="patient-info">
+                    <div><strong>Họ và tên bệnh nhân:</strong> ${patientName}</div>
+                    <div><strong>Ngày sinh:</strong> ${patientDob}</div>
+                    <div><strong>Số điện thoại:</strong> ${patientPhone}</div>
+                    <div><strong>Đơn vị chỉ định:</strong> Phòng khám đa khoa BloodCare AI</div>
+                </div>
+                
+                <div class="table-title">KẾT QUẢ SÀNG LỌC TỪ CÁC MÔ HÌNH AI</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">Bệnh lý sàng lọc</th>
+                            <th style="width: 30%;">Mô hình AI chẩn đoán</th>
+                            <th style="width: 20%; text-align: center;">Nguy cơ</th>
+                            <th style="width: 20%; text-align: right;">Đánh giá</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+                
+                <div class="table-title">TÓM TẮT BỆNH ÁN TỰ ĐỘNG (AUTO-NOTE GENERATOR)</div>
+                <div class="note-section">
+                    ${autoNote}
+                </div>
+                
+                ${credentialsHtml}
+                
+                <div class="signatures">
+                    <div style="text-align: center; width: 200px;">
+                        <strong>Chữ ký Bệnh nhân</strong><br>
+                        <span style="font-size: 11px; color: #6b7280; font-style: italic;">(Ký và ghi rõ họ tên)</span>
+                        <div style="height: 60px;"></div>
+                    </div>
+                    <div style="text-align: center; width: 250px;">
+                        <strong>Bác sĩ chỉ định</strong><br>
+                        <span style="font-size: 11px; color: #6b7280; font-style: italic;">(Ký tên và đóng dấu chuyên môn)</span>
+                        <div style="height: 60px;"></div>
+                        <strong>{{ session.fullname }}</strong>
+                    </div>
+                </div>
+                
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        setTimeout(function() { window.close(); }, 500);
+                    }
+                <\/script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    };
+
     document.addEventListener('DOMContentLoaded', function() {
         const copyNoteBtn = document.getElementById('copyNoteBtn');
         const autoNoteArea = document.getElementById('autoNoteArea');
@@ -475,6 +734,13 @@
                         copyToast.style.display = 'none';
                     }, 2000);
                 });
+            });
+        }
+
+        const printExamReportBtn = document.getElementById('printExamReportBtn');
+        if (printExamReportBtn) {
+            printExamReportBtn.addEventListener('click', function() {
+                window.printExaminationResult();
             });
         }
     });
