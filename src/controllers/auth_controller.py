@@ -1,5 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from functools import wraps
+import re
+import random
 from models import register_user, authenticate_user
 
 auth_bp = Blueprint('auth', __name__)
@@ -95,3 +97,53 @@ def logout():
     session.clear()
     flash("Bạn đã đăng xuất tài khoản thành công.", "success")
     return redirect(url_for('auth.login_page'))
+
+
+@auth_bp.route('/api/quick_add_patient', methods=['POST'])
+@api_login_required
+@api_doctor_required
+def api_quick_add_patient():
+    try:
+        data = request.get_json() or {}
+        fullname = data.get('fullname', '').strip()
+        username = data.get('username', '').strip().lower()
+        password = data.get('password', '').strip()
+        
+        if not fullname:
+            return jsonify({'status': 'error', 'message': 'Họ và tên bệnh nhân không được để trống.'}), 400
+            
+        # If username is not provided, generate one from fullname
+        if not username:
+            import unicodedata
+            # Convert fullname to lowercase unaccented name, e.g. "Nguyen Van A" -> "nguyenvana"
+            normalized = unicodedata.normalize('NFKD', fullname)
+            normalized = "".join([c for c in normalized if not unicodedata.combining(c)])
+            normalized = normalized.replace('đ', 'd').replace('Đ', 'D')
+            normalized = re.sub(r'[^a-zA-Z0-9]', '', normalized).lower()
+            
+            # Append a random 4-digit number to avoid duplicate username conflict
+            username = f"{normalized}{random.randint(1000, 9999)}"
+            
+        # If password is not provided, default to "123456"
+        if not password:
+            password = "123456"
+            
+        # Register user in DB
+        result = register_user(username, password, fullname, role='patient')
+        
+        if result == "exists":
+            return jsonify({'status': 'error', 'message': f'Tên đăng nhập "@{username}" đã tồn tại trên hệ thống.'}), 400
+        elif result:
+            return jsonify({
+                'status': 'success',
+                'message': 'Đăng ký bệnh nhân mới thành công!',
+                'patient': {
+                    'id': result,
+                    'fullname': fullname,
+                    'username': username
+                }
+            }), 200
+        else:
+            return jsonify({'status': 'error', 'message': 'Không thể tạo bệnh nhân. Vui lòng kiểm tra dữ liệu.'}), 500
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'Lỗi hệ thống: {str(e)}'}), 500

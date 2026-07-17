@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, jsonify, session
 import pandas as pd
 from controllers.auth_controller import login_required, api_login_required, doctor_required, api_doctor_required
 from models import (
-    save_prediction, get_user_by_id,
+    save_prediction, get_user_by_id, get_all_patients,
     diabetes_model, anemia_model, liver_model, kidney_model
 )
 
@@ -889,10 +889,72 @@ def digitize_pdf():
                         except ValueError:
                             pass
                     break  # Stop search at first match
+
+        # Patient matching logic
+        matched_patient_id = None
+        try:
+            import unicodedata
+            def normalize_text(val):
+                if not val:
+                    return ""
+                val = unicodedata.normalize('NFKD', val)
+                val = "".join([c for c in val if not unicodedata.combining(c)])
+                val = val.replace('đ', 'd').replace('Đ', 'D')
+                val = val.lower()
+                val = re.sub(r'[^a-z0-9\s]', '', val)
+                return re.sub(r'\s+', ' ', val).strip()
+
+            # 1. Extract name candidates using regexes in PDF text
+            name_candidates = []
+            name_regex = r'(?:họ\s*(?:và\s*)?tên|ho\s*(?:va\s*)?ten|bệnh\s*nhân|benh\s*nhan|patient\s*name|patient|name|tên|ten|họ\s*tên|ho\s*ten)\s*[:\-]?\s*([A-Za-zÀ-ỹđĐ\s]+)'
+            for m in re.finditer(name_regex, text, re.IGNORECASE):
+                cand = m.group(1).strip()
+                cand = re.split(r'[\r\n,;.]', cand)[0].strip()
+                for noise in ['tuổi', 'tuoi', 'age', 'giới', 'gioi', 'gender', 'sex', 'địa chỉ', 'dia chi', 'address', 'số điện thoại', 'sđt', 'phone']:
+                    if noise in cand.lower():
+                        idx = cand.lower().find(noise)
+                        cand = cand[:idx].strip()
+                if cand and 3 <= len(cand) <= 50:
+                    name_candidates.append(cand)
+
+            patients = get_all_patients()
+            
+            # Match 1: Exact matches against extracted name candidates
+            if name_candidates:
+                norm_candidates = [normalize_text(c) for c in name_candidates]
+                for patient in patients:
+                    norm_fullname = normalize_text(patient.get('fullname', ''))
+                    norm_username = normalize_text(patient.get('username', ''))
+                    for norm_cand in norm_candidates:
+                        if norm_cand and (norm_cand == norm_fullname or norm_cand == norm_username):
+                            matched_patient_id = patient['id']
+                            break
+                    if matched_patient_id:
+                        break
+
+            # Match 2: Substring matching in full normalized text
+            if not matched_patient_id:
+                norm_text = normalize_text(text)
+                for patient in patients:
+                    norm_fullname = normalize_text(patient.get('fullname', ''))
+                    norm_username = normalize_text(patient.get('username', ''))
+                    if norm_fullname and len(norm_fullname) >= 5:
+                        pattern = r'\b' + re.escape(norm_fullname) + r'\b'
+                        if re.search(pattern, norm_text):
+                            matched_patient_id = patient['id']
+                            break
+                    if norm_username and len(norm_username) >= 4:
+                        pattern = r'\b' + re.escape(norm_username) + r'\b'
+                        if re.search(pattern, norm_text):
+                            matched_patient_id = patient['id']
+                            break
+        except Exception as match_err:
+            print(f"[DIGITIZE] Error matching patient: {match_err}")
                     
         return jsonify({
             'status': 'success',
             'extracted_data': extracted,
+            'matched_patient_id': matched_patient_id,
             'text_preview': text[:200] + '...' if len(text) > 200 else text
         }), 200
         
