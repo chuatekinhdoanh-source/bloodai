@@ -3,7 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from models.db import db
 from bson.objectid import ObjectId
 
-def register_user(username, password, fullname, role='patient'):
+def register_user(username, password, fullname, role='patient', email=None, phone=None, dob=None, require_password_change=False):
     """Đăng ký tài khoản người dùng mới kèm theo vai trò (doctor hoặc patient)."""
     if db is None:
         return None
@@ -21,6 +21,10 @@ def register_user(username, password, fullname, role='patient'):
             'password_hash': password_hash,
             'fullname': fullname.strip(),
             'role': role.strip().lower() if role in ['doctor', 'patient'] else 'patient',
+            'email': email.strip() if email else '',
+            'phone': phone.strip() if phone else '',
+            'dob': dob.strip() if dob else '',
+            'require_password_change': require_password_change,
             'created_at': datetime.now()
         }
         res = users_col.insert_one(doc)
@@ -48,7 +52,8 @@ def authenticate_user(username, password):
                 'id': str(user['_id']),
                 'username': user['username'],
                 'fullname': user.get('fullname', user['username']),
-                'role': user.get('role', 'patient')
+                'role': user.get('role', 'patient'),
+                'require_password_change': user.get('require_password_change', False)
             }
         else:
             print(f"[USER] Auth failed: Incorrect password for '{username_clean}'.")
@@ -88,7 +93,11 @@ def get_user_by_id(user_id):
                 'id': str(user['_id']),
                 'username': user['username'],
                 'fullname': user.get('fullname', user['username']),
-                'role': user.get('role', 'patient')
+                'role': user.get('role', 'patient'),
+                'email': user.get('email', ''),
+                'phone': user.get('phone', ''),
+                'dob': user.get('dob', ''),
+                'require_password_change': user.get('require_password_change', False)
             }
         return None
     except Exception as e:

@@ -484,6 +484,10 @@ def predict_screening():
         patient_id = request.form['patient_id']
         patient = get_user_by_id(patient_id)
         patient_name = patient['fullname'] if patient else "Chưa rõ"
+        
+        pdf_file = request.form.get('pdf_file')
+        if not pdf_file or pdf_file.strip() == '':
+            pdf_file = None
 
         # 2. Thu thập chỉ số cơ bản
         age = _safe_float(request.form.get('Age'), 45.0)
@@ -636,10 +640,10 @@ def predict_screening():
             'Thiếu máu': 'Có' if ane == 1 else 'Không'
         }
 
-        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'diabetes', db_dict, db_res, pred_db)
-        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'anemia', anm_dict, anm_res, pred_anm)
-        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'liver', liv_dict, liv_res, pred_liv)
-        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'kidney', kdn_dict, kdn_res, pred_kdn)
+        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'diabetes', db_dict, db_res, pred_db, pdf_file=pdf_file)
+        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'anemia', anm_dict, anm_res, pred_anm, pdf_file=pdf_file)
+        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'liver', liv_dict, liv_res, pred_liv, pdf_file=pdf_file)
+        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'kidney', kdn_dict, kdn_res, pred_kdn, pdf_file=pdf_file)
 
         # 6. TÍNH TOÁN CẢNH BÁO TỔNG QUÁT (MÃ MÀU XANH / VÀNG / ĐỎ)
         risk_count = pred_db + pred_anm + pred_liv + pred_kdn
@@ -763,6 +767,61 @@ def predict_screening():
             
         auto_note = f"{summary_intro} { ' '.join(findings) }{recommendation_text} Yêu cầu bệnh nhân điều chỉnh chế độ ăn uống, sinh hoạt lành mạnh theo hướng dẫn y khoa."
 
+        # Check if patient has phone to send SMS
+        sms_sent = False
+        sms_message = None
+        sms_phone = None
+        try:
+            if patient and patient.get('phone'):
+                sms_phone = patient['phone'].strip()
+                if sms_phone:
+                    from datetime import datetime
+                    import os
+                    from flask import current_app
+                    
+                    first_name = patient['fullname'].split()[-1] if patient.get('fullname') else "bạn"
+                    sms_message = f"Chào {first_name}, hồ sơ bệnh án của bạn đã được cập nhật. Bạn hãy đăng nhập vào BloodCareAI.vn với tài khoản: {patient.get('username')}, mật khẩu: [đã gửi]."
+                    
+                    # Log to console
+                    print(f"\n--- [SMS GATEWAY] ---")
+                    print(f"To: {sms_phone}")
+                    print(f"Message: {sms_message}")
+                    print(f"----------------------\n")
+                    
+                    # Append log to file
+                    log_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'logs')
+                    os.makedirs(log_dir, exist_ok=True)
+                    log_file = os.path.join(log_dir, 'sms_notifications.log')
+                    with open(log_file, 'a', encoding='utf-8') as f:
+                        f.write(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] To: {sms_phone} | Msg: {sms_message}\n")
+                        
+                    sms_sent = True
+        except Exception as sms_err:
+            print(f"[SMS] Failed to send mock SMS: {sms_err}")
+
+        # Reconstruct temporary password if change is required
+        temp_password = None
+        if patient and patient.get('require_password_change'):
+            try:
+                import unicodedata
+                import re
+                def clean_text(val):
+                    if not val:
+                        return ""
+                    val = unicodedata.normalize('NFKD', val)
+                    val = "".join([c for c in val if not unicodedata.combining(c)])
+                    val = val.replace('đ', 'd').replace('Đ', 'D')
+                    return val
+                
+                fullname = patient.get('fullname', '')
+                dob = patient.get('dob', '')
+                cleaned_name_parts = re.sub(r'[^a-zA-Z\s]', '', clean_text(fullname)).split()
+                name_part = "".join([w.capitalize() for w in cleaned_name_parts])
+                dob_digits = re.sub(r'\D', '', dob) if dob else "123456"
+                temp_password = f"{name_part}_{dob_digits}"
+            except Exception as pwd_err:
+                print(f"[PREDICT] Error calculating temp password: {pwd_err}")
+
         return render_template('screening_result.html',
                                patient_name=patient_name,
                                status_color=status_color,
@@ -770,7 +829,12 @@ def predict_screening():
                                status_desc=status_desc,
                                diseases=diseases,
                                input_summary=input_summary,
-                               auto_note=auto_note)
+                               auto_note=auto_note,
+                               sms_sent=sms_sent,
+                               sms_message=sms_message,
+                               sms_phone=sms_phone,
+                               patient=patient,
+                               temp_password=temp_password)
     except Exception as e:
         return f"<h3>Lỗi Sàng lọc tổng quát: {e}</h3>"
 
@@ -793,8 +857,28 @@ def digitize_pdf():
         import PyPDF2
         import io
         import re
+        import os
+        import uuid
+        from flask import current_app
         
-        pdf_stream = io.BytesIO(file.read())
+        # Read file bytes
+        file_bytes = file.read()
+        
+        # Ensure upload folder exists
+        upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'pdfs')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Generate unique name
+        ext = os.path.splitext(file.filename)[1]
+        unique_name = f"{uuid.uuid4().hex}{ext}"
+        filepath = os.path.join(upload_dir, unique_name)
+        
+        # Write file
+        with open(filepath, 'wb') as f:
+            f.write(file_bytes)
+            
+        # Parse PDF using BytesIO
+        pdf_stream = io.BytesIO(file_bytes)
         reader = PyPDF2.PdfReader(pdf_stream)
         
         text = ""
@@ -804,94 +888,184 @@ def digitize_pdf():
         # Parse text using regex
         extracted = {}
         
-        # Mapping patterns (supporting accented/unaccented variations and intermediate comments via non-greedy wildcard)
+        # Mapping patterns (case-insensitive variations, supporting colon/dash, whitespace, and intermediate labels)
         patterns = {
-            'Age': [r'(?:Tuổi|Tuoi|Age).*?(\d+)'],
-            'Gender': [r'(?:Giới\s+tính|Gioi\s+tinh|Gender|Sex).*?(Nam|Nữ|Nu|Male|Female|1|0)'],
-            'Glucose': [r'(?:Glucose|Đường\s+huyết|Duong\s+huyet|bgr).*?(\d+(?:\.\d+)?)'],
-            'Hemoglobin': [r'(?:Hemoglobin|Huyết\s+sắc\s+tố|Huyet\s+sac\s+to|Hgb|hemo).*?(\d+(?:\.\d+)?)'],
-            'BloodPressure': [
-                r'(?:Huyết\s+áp|Huyet\s+ap|Blood\s+Pressure|HA|bp).*?(\d+)\s*/\s*(\d+)',
-                r'(?:Huyết\s+áp\s+tâm\s+trương|Huyet\s+ap\s+tam\s+truong|Diastolic\s+Blood\s+Pressure|Diastolic\s+BP|bp).*?(\d+(?:\.\d+)?)'
+            'Age': [
+                r'(?:Tuổi|Tuoi|Age)\s*[:\-]?\s*(\d+)'
             ],
-            'BMI': [r'(?:BMI|Chỉ\s+số\s+khối\s+cơ\s+thể|Chi\s+so\s+khoi\s+co\s+the).*?(\d+(?:\.\d+)?)'],
-            'MCV': [r'(?:MCV).*?(\d+(?:\.\d+)?)'],
-            'MCH': [r'(?:MCH).*?(\d+(?:\.\d+)?)'],
-            'MCHC': [r'(?:MCHC).*?(\d+(?:\.\d+)?)'],
-            'Total_Bilirubin': [r'(?:Bilirubin\s+toàn\s+phần|Bilirubin\s+toan\s+phan|Total\s+Bilirubin|TBil).*?(\d+(?:\.\d+)?)'],
-            'Direct_Bilirubin': [r'(?:Bilirubin\s+trực\s+tiếp|Bilirubin\s+truc\s+tiep|Direct\s+Bilirubin|DBil).*?(\d+(?:\.\d+)?)'],
-            'Alkaline_Phosphotase': [r'(?:Alkaline\s+Phosphotase|ALP).*?(\d+(?:\.\d+)?)'],
-            'Alamine_Aminotransferase': [r'(?:Alamine\s+Aminotransferase|ALT|SGPT|Alanine\s+Aminotransferase).*?(\d+(?:\.\d+)?)'],
-            'Aspartate_Aminotransferase': [r'(?:Aspartate\s+Aminotransferase|AST|SGOT).*?(\d+(?:\.\d+)?)'],
-            'Total_Protiens': [r'(?:Protein\s+toàn\s+phần|Protein\s+toan\s+phan|Total\s+Protein|TP|Total\s+Protiens).*?(\d+(?:\.\d+)?)'],
-            'Albumin': [r'(?:Albumin|ALB).*?(\d+(?:\.\d+)?)'],
-            'Albumin_and_Globulin_Ratio': [r'(?:Tỷ\s+lệ\s+A/G|Ty\s+le\s+A/G|Albumin/Globulin|A/G\s+Ratio|AG\s+Ratio).*?(\d+(?:\.\d+)?)'],
-            'sg': [r'(?:Tỷ\s+trọng\s+nước\s+tiểu|Ty\s+trong\s+nuoc\s+tieu|Tỷ\s+trọng|Ty\s+trong|Specific\s+Gravity|sg).*?(1\.\d{3})'],
-            'al': [r'(?:Albumin\s+nước\s+tiểu|Albumin\s+nuoc\s+tieu|Urine\s+Albumin|al).*?(\d+)'],
-            'su': [r'(?:Đường\s+nước\s+tiểu|Duong\s+nuoc\s+tieu|Urine\s+Sugar|su).*?(\d+)'],
-            'bu': [r'(?:Ure\s+máu|Ure\s+mau|Ure|Blood\s+Urea|bu).*?(\d+(?:\.\d+)?)'],
-            'sc': [r'(?:Creatinine|sc).*?(\d+(?:\.\d+)?)'],
-            'sod': [r'(?:Natri|Sodium|sod).*?(\d+(?:\.\d+)?)'],
-            'pot': [r'(?:Kali|Potassium|pot).*?(\d+(?:\.\d+)?)'],
-            'pcv': [r'(?:Thể\s+tích\s+hồng\s+cầu|The\s+tich\s+hong\s+cau|PCV|HCT).*?(\d+(?:\.\d+)?)'],
-            'wc': [r'(?:Bạch\s+cầu|Bach\s+cau|WBC).*?(\d+(?:\.\d+)?)'],
-            'rc': [r'(?:Hồng\s+cầu|Hong\s+cau|RBC).*?(\d+(?:\.\d+)?)'],
-            'htn': [r'(?:Tăng\s+huyết\s+áp|Tang\s+huyet\s+ap|Hypertension|htn).*?(Có|Không|Co|Khong|Yes|No|1|0)'],
-            'dm': [r'(?:Đái\s+tháo\s+đường|Dai\s+thao\s+duong|Tiểu\s+đường|Tieu\s+duong|Diabetes|dm).*?(Có|Không|Co|Khong|Yes|No|1|0)'],
-            'cad': [r'(?:Bệnh\s+mạch\s+vành|Benh\s+mach\s+vanh|Mạch\s+vành|Mach\s+vanh|CAD).*?(Có|Không|Co|Khong|Yes|No|1|0)'],
-            'pe': [r'(?:Phù\s+chân|Phu\s+chan|Pedal\s+Edema|pe).*?(Có|Không|Co|Khong|Yes|No|1|0)'],
-            'ane': [r'(?:Thiếu\s+máu|Thieu\s+mau|Anemia|ane).*?(Có|Không|Co|Khong|Yes|No|1|0)'],
-            'appet': [r'(?:Thèm\s+ăn|Them\s+an|Ăn\s+ngon|An\s+ngon|Appetite|appet).*?(Ngon|Kém|Kem|Chán|Chan|Good|Poor)'],
-            'Pregnancies': [r'(?:Số\s+lần\s+mang\s+thai|So\s+lan\s+mang\s+thai|Mang\s+thai|Pregnancies).*?(\d+)'],
-            'SkinThickness': [r'(?:Độ\s+dày\s+nếp\s+da|Do\s+day\s+nep\s+da|Skin\s+Thickness).*?(\d+(?:\.\d+)?)'],
-            'Insulin': [r'(?:Insulin).*?(\d+(?:\.\d+)?)'],
-            'DiabetesPedigreeFunction': [r'(?:Diabetes\s+Pedigree|DPF).*?(\d+(?:\.\d+)?)']
+            'Gender': [
+                r'(?:Giới\s+tính|Gioi\s+tinh|Gender|Sex)\s*[:\-]?\s*(Nam|Nữ|Nu|Male|Female|1|0)'
+            ],
+            'Glucose': [
+                r'(?:Glucose|Đường\s+huyết|Duong\s+huyet|bgr)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Hemoglobin': [
+                r'(?:Hemoglobin|Huyết\s+sắc\s+tố|Huyet\s+sac\s+to|Hgb|hemo)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'BloodPressure': [
+                r'(?:Huyết\s+áp|Huyet\s+ap|Blood\s+Pressure|HA|bp)\s*[:\-]?\s*(\d+)\s*/\s*(\d+)',
+                r'(?:Huyết\s+áp\s+tâm\s+trương|Huyet\s+ap\s+tam\s+truong|Diastolic\s+Blood\s+Pressure|Diastolic\s+BP|bp)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'BMI': [
+                r'(?:BMI|Chỉ\s+số\s+khối\s+cơ\s+thể|Chi\s+so\s+khoi\s+co\s+the)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'MCV': [
+                r'(?:MCV)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'MCH': [
+                r'(?:MCH)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'MCHC': [
+                r'(?:MCHC)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Total_Bilirubin': [
+                r'(?:Bilirubin\s+toàn\s+phần|Bilirubin\s+toan\s+phan|Total\s+Bilirubin|TBil)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Direct_Bilirubin': [
+                r'(?:Bilirubin\s+trực\s+tiếp|Bilirubin\s+truc\s+tiep|Direct\s+Bilirubin|DBil)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Alkaline_Phosphotase': [
+                r'(?:Alkaline\s+Phosphotase|ALP)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Alamine_Aminotransferase': [
+                r'(?:Alamine\s+Aminotransferase|ALT|SGPT|Alanine\s+Aminotransferase)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Aspartate_Aminotransferase': [
+                r'(?:Aspartate\s+Aminotransferase|AST|SGOT)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Total_Protiens': [
+                r'(?:Protein\s+toàn\s+phần|Protein\s+toan\s+phan|Total\s+Protein|TP|Total\s+Protiens)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Albumin': [
+                r'(?:Albumin|ALB)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Albumin_and_Globulin_Ratio': [
+                r'(?:Tỷ\s+lệ\s+A/G|Ty\s+le\s+A/G|Albumin/Globulin|A/G\s+Ratio|AG\s+Ratio)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'sg': [
+                r'(?:Tỷ\s+trọng\s+nước\s+tiểu|Ty\s+trong\s+nuoc\s+tieu|Tỷ\s+trọng|Ty\s+trong|Specific\s+Gravity|sg)\s*[:\-]?\s*(1\.\d{3})'
+            ],
+            'al': [
+                r'(?:Albumin\s+nước\s+tiểu|Albumin\s+nuoc\s+tieu|Urine\s+Albumin|al)\s*[:\-]?\s*(\d+)'
+            ],
+            'su': [
+                r'(?:Đường\s+nước\s+tiểu|Duong\s+nuoc\s+tieu|Urine\s+Sugar|su)\s*[:\-]?\s*(\d+)'
+            ],
+            'bu': [
+                r'(?:Ure\s+máu|Ure\s+mau|Ure|Urea|Blood\s+Urea|bu)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'sc': [
+                r'(?:Creatinine|Serum\s+Creatinine|sc)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'sod': [
+                r'(?:Natri|Sodium|sod)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'pot': [
+                r'(?:Kali|Potassium|pot)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'pcv': [
+                r'(?:Thể\s+tích\s+hồng\s+cầu|The\s+tich\s+hong\s+cau|PCV|HCT)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'wc': [
+                r'(?:Bạch\s+cầu|Bach\s+cau|WBC|wc)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'rc': [
+                r'(?:Hồng\s+cầu|Hong\s+cau|RBC|rc)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'htn': [
+                r'(?:Tăng\s+huyết\s+áp|Tang\s+huyet\s+ap|Hypertension|htn)\s*[:\-]?\s*(Có|Không|Co|Khong|Yes|No|1|0)'
+            ],
+            'dm': [
+                r'(?:Đái\s+tháo\s+đường|Dai\s+thao\s+duong|Tiểu\s+đường|Tieu\s+duong|Diabetes|dm)\s*[:\-]?\s*(Có|Không|Co|Khong|Yes|No|1|0)'
+            ],
+            'cad': [
+                r'(?:Bệnh\s+mạch\s+vành|Benh\s+mach\s+vanh|Mạch\s+vành|Mach\s+vanh|CAD)\s*[:\-]?\s*(Có|Không|Co|Khong|Yes|No|1|0)'
+            ],
+            'pe': [
+                r'(?:Phù\s+chân|Phu\s+chan|Pedal\s+Edema|pe)\s*[:\-]?\s*(Có|Không|Co|Khong|Yes|No|1|0)'
+            ],
+            'ane': [
+                r'(?:Thiếu\s+máu|Thieu\s+mau|Anemia|ane)\s*[:\-]?\s*(Có|Không|Co|Khong|Yes|No|1|0)'
+            ],
+            'appet': [
+                r'(?:Thèm\s+ăn|Them\s+an|Ăn\s+ngon|An\s+ngon|Appetite|appet)\s*[:\-]?\s*(Ngon|Kém|Kem|Chán|Chan|Good|Poor)'
+            ],
+            'Pregnancies': [
+                r'(?:Số\s+lần\s+mang\s+thai|So\s+lan\s+mang\s+thai|Mang\s+thai|Pregnancies)\s*[:\-]?\s*(\d+)'
+            ],
+            'SkinThickness': [
+                r'(?:Độ\s+dày\s+nếp\s+da|Do\s+day\s+nep\s+da|Skin\s+Thickness)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Insulin': [
+                r'(?:Insulin)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'DiabetesPedigreeFunction': [
+                r'(?:Diabetes\s+Pedigree|DPF)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ],
+            'Cholesterol': [
+                r'(?:Cholesterol|Chol)\s*[:\-]?\s*(\d+(?:\.\d+)?)'
+            ]
         }
         
         for key, regexes in patterns.items():
             for regex in regexes:
-                match = re.search(regex, text, re.IGNORECASE)
-                if match:
-                    val = match.group(1).strip()
-                    # Custom processing for different types
-                    if key == 'BloodPressure' and len(match.groups()) > 1:
-                        # Composite systolic/diastolic -> get diastolic (second number)
-                        val2 = match.group(2)
-                        if val2:
-                            extracted[key] = float(val2)
-                        else:
-                            extracted[key] = float(val)
-                    elif key == 'Gender':
-                        val_lower = val.lower()
-                        if val_lower in ['nam', 'male', '1']:
-                            extracted[key] = 1
-                        else:
-                            extracted[key] = 0
-                    elif key in ['htn', 'dm', 'cad', 'pe', 'ane']:
-                        val_lower = val.lower()
-                        if val_lower in ['có', 'yes', '1']:
-                            extracted[key] = 1
-                        else:
-                            extracted[key] = 0
-                    elif key == 'appet':
-                        val_lower = val.lower()
-                        if val_lower in ['ngon', 'good', 'ngon miệng']:
-                            extracted[key] = 1
-                        else:
-                            extracted[key] = 0
-                    else:
-                        # standard float/int
-                        try:
-                            if '.' in val:
-                                extracted[key] = float(val)
+                try:
+                    match = re.search(regex, text, re.IGNORECASE)
+                    if match:
+                        val = match.group(1).strip()
+                        # Custom processing for different types
+                        if key == 'BloodPressure' and len(match.groups()) > 1:
+                            val2 = match.group(2)
+                            if val2:
+                                extracted[key] = float(val2)
                             else:
-                                extracted[key] = int(val)
-                        except ValueError:
-                            pass
-                    break  # Stop search at first match
+                                extracted[key] = float(val)
+                        elif key == 'Gender':
+                            val_lower = val.lower()
+                            if val_lower in ['nam', 'male', '1']:
+                                extracted[key] = 1
+                            else:
+                                extracted[key] = 0
+                        elif key in ['htn', 'dm', 'cad', 'pe', 'ane']:
+                            val_lower = val.lower()
+                            if val_lower in ['có', 'yes', '1']:
+                                extracted[key] = 1
+                            else:
+                                extracted[key] = 0
+                        elif key == 'appet':
+                            val_lower = val.lower()
+                            if val_lower in ['ngon', 'good', 'ngon miệng']:
+                                extracted[key] = 1
+                            else:
+                                extracted[key] = 0
+                        elif key in ['wc', 'rc'] and val:
+                            # If value is given like "7.6 x10^3/uL", convert to numerical
+                            num_match = re.match(r'^(\d+(?:\.\d+)?)', val)
+                            if num_match:
+                                num_val = float(num_match.group(1))
+                                if key == 'wc' and num_val < 100:
+                                    # Convert 7.6 to 7600
+                                    extracted[key] = int(num_val * 1000)
+                                else:
+                                    extracted[key] = num_val
+                            else:
+                                extracted[key] = float(val)
+                        else:
+                            # standard float/int
+                            try:
+                                if '.' in val:
+                                    extracted[key] = float(val)
+                                else:
+                                    extracted[key] = int(val)
+                            except ValueError:
+                                extracted[key] = val
+                        break  # Stop search at first match
+                except Exception as parse_err:
+                    print(f"[DIGITIZE] Error parsing field {key} from text: {parse_err}")
 
         # Patient matching logic
         matched_patient_id = None
+        ext_fullname = ""
         try:
             import unicodedata
             def normalize_text(val):
@@ -906,7 +1080,7 @@ def digitize_pdf():
 
             # 1. Extract name candidates using regexes in PDF text
             name_candidates = []
-            name_regex = r'(?:họ\s*(?:và\s*)?tên|ho\s*(?:va\s*)?ten|bệnh\s*nhân|benh\s*nhan|patient\s*name|patient|name|tên|ten|họ\s*tên|ho\s*ten)\s*[:\-]?\s*([A-Za-zÀ-ỹđĐ\s]+)'
+            name_regex = r'(?:họ\s*(?:và\s*)?tên|ho\s*(?:va\s*)?ten|bệnh\s*nhân|benh\s*nhan|patient\s*name|patient|name|tên|ten|họ\s*tên|ho\s*ten)[ \t]*[:\-]?[ \t]*([A-Za-zÀ-ỹđĐ \t]+)'
             for m in re.finditer(name_regex, text, re.IGNORECASE):
                 cand = m.group(1).strip()
                 cand = re.split(r'[\r\n,;.]', cand)[0].strip()
@@ -916,6 +1090,9 @@ def digitize_pdf():
                         cand = cand[:idx].strip()
                 if cand and 3 <= len(cand) <= 50:
                     name_candidates.append(cand)
+
+            if name_candidates:
+                ext_fullname = name_candidates[0]
 
             patients = get_all_patients()
             
@@ -950,11 +1127,41 @@ def digitize_pdf():
                             break
         except Exception as match_err:
             print(f"[DIGITIZE] Error matching patient: {match_err}")
+            
+        # Parse additional patient info for registration modal (email, phone, DOB)
+        ext_email = ""
+        ext_phone = ""
+        ext_dob = ""
+        try:
+            email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', text)
+            if email_match:
+                ext_email = email_match.group(0).strip()
+                
+            phone_match = re.search(r'\b(0\d{9,10})\b', text)
+            if phone_match:
+                ext_phone = phone_match.group(1).strip()
+                
+            dob_match = re.search(r'(?:ngày\s*sinh|ngay\s*sinh|dob|date\s*of\s*birth|ns|sinh\s*ngày|sinh\s*ngay)[ \t]*[:\-]?[ \t]*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4})', text, re.IGNORECASE)
+            if dob_match:
+                ext_dob = dob_match.group(1).strip()
+            else:
+                date_match = re.search(r'\b(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4})\b', text)
+                if date_match:
+                    ext_dob = date_match.group(1).strip()
+        except Exception as info_err:
+            print(f"[DIGITIZE] Error parsing patient contact/dob: {info_err}")
                     
         return jsonify({
             'status': 'success',
             'extracted_data': extracted,
             'matched_patient_id': matched_patient_id,
+            'pdf_file': unique_name,
+            'patient_info': {
+                'fullname': ext_fullname,
+                'email': ext_email,
+                'phone': ext_phone,
+                'dob': ext_dob
+            },
             'text_preview': text[:200] + '...' if len(text) > 200 else text
         }), 200
         
