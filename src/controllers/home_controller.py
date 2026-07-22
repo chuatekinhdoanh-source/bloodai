@@ -34,7 +34,12 @@ def index():
     # Bệnh nhân tự động điều hướng sang trang lịch sử chẩn đoán cá nhân
     if session.get('role') == 'patient':
         return redirect(url_for('history.history_page'))
-        
+    return redirect(url_for('home.screening'))
+
+@home_bp.route('/diabetes')
+@login_required
+@doctor_required
+def diabetes():
     patients = get_all_patients()
     patient_id = request.args.get('patient_id')
     patient, screening_data = _get_patient_and_screening_data(patient_id)

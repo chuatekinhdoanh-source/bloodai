@@ -53,7 +53,7 @@ def predict_diabetes():
                                disease_name="Phân tích nguy cơ Tiểu Đường (XGBoost)",
                                result_text=result,
                                is_positive=prediction,
-                               back_url="/",
+                               back_url="/diabetes",
                                input_data=input_dict,
                                patient_id=patient_id,
                                next_disease=next_disease,
@@ -919,7 +919,7 @@ def predict_screening():
             d_id = name_to_id[d['name']]
             remaining_ids = pathway_seq[i+1:]
             remaining_str = ",".join(remaining_ids)
-            path = '/' if d_id == 'diabetes' else f'/{d_id}'
+            path = '/diabetes' if d_id == 'diabetes' else f'/{d_id}'
             url = f"{path}?patient_id={patient_id}&current_disease={d_id}&next_disease={remaining_str}&from_pathway=1"
             pathway_buttons.append({
                 'name': d['name'],
