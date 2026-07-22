@@ -377,11 +377,10 @@
             <table class="report-table">
                 <thead>
                     <tr>
-                        <th style="width: 25%;">Bệnh Lý Sàng Lọc</th>
-                        <th style="width: 20%;">Thuật Toán AI Sử Dụng</th>
-                        <th style="width: 22%;">Xác Suất Nguy Cơ</th>
-                        <th style="width: 15%;">Đánh Giá</th>
-                        <th style="width: 18%; text-align: center;">Khám Chuyên Sâu</th>
+                        <th style="width: 30%;">Bệnh Lý Sàng Lọc</th>
+                        <th style="width: 25%;">Thuật Toán AI Sử Dụng</th>
+                        <th style="width: 25%;">Xác Suất Nguy Cơ</th>
+                        <th style="width: 20%;">Đánh Giá</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -422,17 +421,6 @@
                             {% else %}
                                 <span class="result-badge result-normal" style="display: inline-flex;">
                                     <i class="fa-solid fa-circle-check"></i> Bình Thường
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td style="text-align: center;">
-                            {% if ds.pred == 1 %}
-                                <a href="{% if ds.name == 'Tiểu Đường' %}/?from_screening=1&patient_id={{ patient.id }}{% elif ds.name == 'Thiếu Máu' %}/anemia?from_screening=1&patient_id={{ patient.id }}{% elif ds.name == 'Bệnh Gan' %}/liver?from_screening=1&patient_id={{ patient.id }}{% else %}/kidney?from_screening=1&patient_id={{ patient.id }}{% endif %}" class="btn-action-report btn-advanced" style="padding: 6px 12px; font-size: 12px; font-weight: 600; text-decoration: none; border-radius: 8px; background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%); color: white; display: inline-flex; align-items: center; gap: 6px; border: none; cursor: pointer; box-shadow: 0 2px 6px rgba(79, 70, 229, 0.2);">
-                                    <i class="fa-solid fa-notes-medical"></i> Khám chuyên sâu
-                                </a>
-                            {% else %}
-                                <span style="font-size: 12.5px; color: #a1a1aa; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border: 1px dashed #e4e4e7; border-radius: 8px;">
-                                    <i class="fa-solid fa-lock" style="font-size: 11px;"></i> Chưa cần thiết
                                 </span>
                             {% endif %}
                         </td>
