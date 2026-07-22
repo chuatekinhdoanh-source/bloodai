@@ -50,6 +50,7 @@
 <form action="/predict_kidney" method="POST">
     <input type="hidden" name="next_disease" value="{{ next_disease }}">
     <input type="hidden" name="from_pathway" value="{{ from_pathway }}">
+    <input type="hidden" name="session_id" value="{{ session_id }}">
     {% if patient %}
     <input type="hidden" name="patient_id" value="{{ patient.id }}">
     {% endif %}

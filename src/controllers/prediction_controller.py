@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, session
 import pandas as pd
+import uuid
 from controllers.auth_controller import login_required, api_login_required, doctor_required, api_doctor_required
 from models import (
     save_prediction, get_user_by_id, get_all_patients,
@@ -45,7 +46,8 @@ def predict_diabetes():
             'Hệ số tiền sử': dpf,
             'Tuổi': int(age)
         }
-        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'diabetes', input_dict, result, prediction)
+        session_id = request.form.get('session_id') or str(uuid.uuid4())
+        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'diabetes', input_dict, result, prediction, session_id=session_id)
         
         next_disease = request.form.get('next_disease', '')
         from_pathway = request.form.get('from_pathway', '')
@@ -57,7 +59,8 @@ def predict_diabetes():
                                input_data=input_dict,
                                patient_id=patient_id,
                                next_disease=next_disease,
-                               from_pathway=from_pathway)
+                               from_pathway=from_pathway,
+                               session_id=session_id)
     except Exception as e:
         return f"<h3>Lỗi Tiểu đường: {e}</h3>"
 
@@ -94,7 +97,8 @@ def predict_anemia():
             'MCHC': mchc,
             'MCV': mcv
         }
-        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'anemia', input_dict, result, prediction)
+        session_id = request.form.get('session_id') or str(uuid.uuid4())
+        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'anemia', input_dict, result, prediction, session_id=session_id)
         
         next_disease = request.form.get('next_disease', '')
         from_pathway = request.form.get('from_pathway', '')
@@ -106,7 +110,8 @@ def predict_anemia():
                                input_data=input_dict,
                                patient_id=patient_id,
                                next_disease=next_disease,
-                               from_pathway=from_pathway)
+                               from_pathway=from_pathway,
+                               session_id=session_id)
     except Exception as e:
         return f"<h3>Lỗi Thiếu máu: {e}</h3>"
 
@@ -127,6 +132,8 @@ def predict_liver():
             del data['next_disease']
         if 'from_pathway' in data:
             del data['from_pathway']
+        if 'session_id' in data:
+            del data['session_id']
         
         for key in data: data[key] = float(data[key])
         input_df = pd.DataFrame([data])
@@ -144,7 +151,8 @@ def predict_liver():
             input_dict['Giới tính'] = 'Nam' if input_dict['Gender'] == 1 else 'Nữ'
             del input_dict['Gender']
         
-        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'liver', input_dict, result, prediction)
+        session_id = request.form.get('session_id') or str(uuid.uuid4())
+        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'liver', input_dict, result, prediction, session_id=session_id)
         
         next_disease = request.form.get('next_disease', '')
         from_pathway = request.form.get('from_pathway', '')
@@ -156,7 +164,8 @@ def predict_liver():
                                input_data=input_dict,
                                patient_id=patient_id,
                                next_disease=next_disease,
-                               from_pathway=from_pathway)
+                               from_pathway=from_pathway,
+                               session_id=session_id)
     except Exception as e:
         return f"<h3>Lỗi Bệnh Gan: {e}</h3>"
 
@@ -177,6 +186,8 @@ def predict_kidney():
             del data['next_disease']
         if 'from_pathway' in data:
             del data['from_pathway']
+        if 'session_id' in data:
+            del data['session_id']
         
         for key in data: data[key] = float(data[key])
         input_df = pd.DataFrame([data])
@@ -195,7 +206,8 @@ def predict_kidney():
         prediction = int(kidney_model.predict(input_df)[0])
         result = "CÓ NGUY CƠ BỆNH THẬN" if prediction == 1 else "BÌNH THƯỜNG"
         
-        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'kidney', data, result, prediction)
+        session_id = request.form.get('session_id') or str(uuid.uuid4())
+        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'kidney', data, result, prediction, session_id=session_id)
         
         next_disease = request.form.get('next_disease', '')
         from_pathway = request.form.get('from_pathway', '')
@@ -207,7 +219,8 @@ def predict_kidney():
                                input_data=data,
                                patient_id=patient_id,
                                next_disease=next_disease,
-                               from_pathway=from_pathway)
+                               from_pathway=from_pathway,
+                               session_id=session_id)
     except Exception as e:
         return f"<h3>Lỗi Bệnh Thận: {e}</h3>"
 
@@ -271,7 +284,9 @@ def api_predict_diabetes():
             'Tuổi': int(age)
         }
         
-        pred_id = save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'diabetes', input_dict, result, prediction)
+        data_src = request.get_json(silent=True) or request.form
+        session_id = data_src.get('session_id') or str(uuid.uuid4())
+        pred_id = save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'diabetes', input_dict, result, prediction, session_id=session_id)
         
         return jsonify({
             'status': 'success',
@@ -335,7 +350,9 @@ def api_predict_anemia():
             'MCV': mcv
         }
         
-        pred_id = save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'anemia', input_dict, result, prediction)
+        data_src = request.get_json(silent=True) or request.form
+        session_id = data_src.get('session_id') or str(uuid.uuid4())
+        pred_id = save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'anemia', input_dict, result, prediction, session_id=session_id)
         
         return jsonify({
             'status': 'success',
@@ -393,7 +410,9 @@ def api_predict_liver():
             input_dict['Giới tính'] = 'Nam' if float(input_dict['Gender']) == 1 else 'Nữ'
             del input_dict['Gender']
             
-        pred_id = save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'liver', input_dict, result, prediction)
+        data_src = request.get_json(silent=True) or request.form
+        session_id = data_src.get('session_id') or str(uuid.uuid4())
+        pred_id = save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'liver', input_dict, result, prediction, session_id=session_id)
         
         return jsonify({
             'status': 'success',
@@ -452,7 +471,9 @@ def api_predict_kidney():
         prediction = int(kidney_model.predict(input_df)[0])
         result = "CÓ NGUY CƠ BỆNH THẬN" if prediction == 1 else "BÌNH THƯỜNG"
         
-        pred_id = save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'kidney', float_data, result, prediction)
+        data_src = request.get_json(silent=True) or request.form
+        session_id = data_src.get('session_id') or str(uuid.uuid4())
+        pred_id = save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'kidney', float_data, result, prediction, session_id=session_id)
         
         return jsonify({
             'status': 'success',
@@ -507,6 +528,7 @@ def _safe_float(val, default):
 @doctor_required
 def predict_screening():
     try:
+        session_id = str(uuid.uuid4())
 
         # 1. Lấy thông tin bệnh nhân nhận kết quả
         patient_id = request.form['patient_id']
@@ -668,10 +690,10 @@ def predict_screening():
             'Thiếu máu': 'Có' if ane == 1 else 'Không'
         }
 
-        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'diabetes', db_dict, db_res, pred_db, pdf_file=pdf_file)
-        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'anemia', anm_dict, anm_res, pred_anm, pdf_file=pdf_file)
-        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'liver', liv_dict, liv_res, pred_liv, pdf_file=pdf_file)
-        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'kidney', kdn_dict, kdn_res, pred_kdn, pdf_file=pdf_file)
+        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'diabetes', db_dict, db_res, pred_db, pdf_file=pdf_file, session_id=session_id)
+        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'anemia', anm_dict, anm_res, pred_anm, pdf_file=pdf_file, session_id=session_id)
+        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'liver', liv_dict, liv_res, pred_liv, pdf_file=pdf_file, session_id=session_id)
+        save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'kidney', kdn_dict, kdn_res, pred_kdn, pdf_file=pdf_file, session_id=session_id)
 
         # 6. TÍNH TOÁN CẢNH BÁO TỔNG QUÁT (MÃ MÀU XANH / VÀNG / ĐỎ)
         risk_count = pred_db + pred_anm + pred_liv + pred_kdn
@@ -920,7 +942,7 @@ def predict_screening():
             remaining_ids = pathway_seq[i+1:]
             remaining_str = ",".join(remaining_ids)
             path = '/diabetes' if d_id == 'diabetes' else f'/{d_id}'
-            url = f"{path}?patient_id={patient_id}&current_disease={d_id}&next_disease={remaining_str}&from_pathway=1"
+            url = f"{path}?patient_id={patient_id}&current_disease={d_id}&next_disease={remaining_str}&from_pathway=1&session_id={session_id}"
             pathway_buttons.append({
                 'name': d['name'],
                 'url': url,
@@ -932,7 +954,7 @@ def predict_screening():
         save_prediction(
             patient_id, patient_name, session['user_id'], session['fullname'], 
             'screening', {'diseases': diseases, 'inputs': input_summary, 'pathway': pathway_seq}, 
-            status_text, risk_count, pdf_file=pdf_file
+            status_text, risk_count, pdf_file=pdf_file, session_id=session_id
         )
 
         return render_template('screening_result.html',
@@ -1290,47 +1312,61 @@ def digitize_pdf():
 @doctor_required
 def comprehensive_report():
     try:
+        session_id = request.args.get('session_id')
         patient_id = request.args.get('patient_id')
+        
+        from models.db import db
+        predictions_col = db['predictions']
+        
+        screening_rec = None
+        specialist_preds = {}
+        disease_types = ['diabetes', 'anemia', 'liver', 'kidney']
+        has_specialized = {dt: False for dt in disease_types}
+        
+        if session_id:
+            session_preds = list(predictions_col.find({'session_id': session_id}))
+            if session_preds:
+                if not patient_id:
+                    patient_id = session_preds[0].get('patient_id')
+                for doc in session_preds:
+                    dt = doc.get('disease_type')
+                    if dt == 'screening':
+                        screening_rec = doc
+                    elif dt in disease_types:
+                        specialist_preds[dt] = doc
+                        has_specialized[dt] = True
+                        
+        if not screening_rec and not specialist_preds:
+            if not patient_id:
+                return "<h3>Lỗi: Thiếu thông tin bệnh nhân hoặc phiên khám.</h3>", 400
+                
+            screening_rec = predictions_col.find_one(
+                {'patient_id': str(patient_id), 'disease_type': 'screening'},
+                sort=[('created_at', -1)]
+            )
+            
+            for dt in disease_types:
+                pred_doc = predictions_col.find_one(
+                    {'patient_id': str(patient_id), 'disease_type': dt},
+                    sort=[('created_at', -1)]
+                )
+                if pred_doc:
+                    specialist_preds[dt] = pred_doc
+                    
+            for dt in disease_types:
+                if dt in specialist_preds:
+                    if screening_rec:
+                        if specialist_preds[dt].get('created_at') > screening_rec.get('created_at'):
+                            has_specialized[dt] = True
+                    else:
+                        has_specialized[dt] = True
+                        
         if not patient_id:
             return "<h3>Lỗi: Thiếu mã bệnh nhân (patient_id).</h3>", 400
             
         patient = get_user_by_id(patient_id)
         if not patient:
             return "<h3>Lỗi: Không tìm thấy bệnh nhân.</h3>", 404
-            
-        # Get latest 'screening' record
-        from models.db import db
-        predictions_col = db['predictions']
-        
-        screening_rec = predictions_col.find_one(
-            {'patient_id': str(patient_id), 'disease_type': 'screening'},
-            sort=[('created_at', -1)]
-        )
-        
-        # Load the latest predictions for the 4 diseases
-        specialist_preds = {}
-        disease_types = ['diabetes', 'anemia', 'liver', 'kidney']
-        for dt in disease_types:
-            pred_doc = predictions_col.find_one(
-                {'patient_id': str(patient_id), 'disease_type': dt},
-                sort=[('created_at', -1)]
-            )
-            if pred_doc:
-                specialist_preds[dt] = pred_doc
-                
-        # Determine if each disease has been specialized-analyzed after screening
-        has_specialized = {}
-        for dt in disease_types:
-            has_specialized[dt] = False
-            if dt in specialist_preds:
-                # If there's a screening record, compare timestamps or IDs
-                if screening_rec:
-                    # If the specialist prediction is newer than screening
-                    if specialist_preds[dt].get('created_at') > screening_rec.get('created_at'):
-                        has_specialized[dt] = True
-                else:
-                    # No screening record, if it exists we treat it as specialized
-                    has_specialized[dt] = True
 
         # Construct general screening data from screening_rec or fallback
         if screening_rec:

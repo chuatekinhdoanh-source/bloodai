@@ -309,77 +309,73 @@
         <thead>
             <tr>
                 <th style="width: 5%;">#</th>
-                <th style="width: 12%;">Khoa chẩn đoán</th>
+                <th style="width: 18%;">Thời gian thực hiện</th>
                 {% if session.get('role') == 'doctor' %}
-                <th style="width: 15%;">Bệnh nhân xét nghiệm</th>
+                <th style="width: 20%;">Bệnh nhân xét nghiệm</th>
                 {% else %}
-                <th style="width: 15%;">Bác sĩ chẩn đoán</th>
+                <th style="width: 20%;">Bác sĩ chẩn đoán</th>
                 {% endif %}
-                <th style="width: 35%;">Chỉ số xét nghiệm nhập vào</th>
-                <th style="width: 13%;">Kết quả phân tích</th>
-                <th style="width: 15%;">Thời gian thực hiện</th>
+                <th style="width: 37%;">Bệnh lý đã khám trong đợt</th>
+                <th style="width: 15%;">Hồ sơ bệnh án</th>
                 {% if session.get('role') == 'doctor' %}
                 <th style="width: 5%;">Xóa</th>
                 {% endif %}
             </tr>
         </thead>
         <tbody>
-            {% for pred in predictions %}
+            {% for sess in predictions %}
             <tr>
                 <td><strong>{{ loop.index }}</strong></td>
-                <td>
-                    {% if pred.disease_type == 'diabetes' %}
-                        <span class="badge badge-diabetes">Tiểu Đường</span>
-                    {% elif pred.disease_type == 'anemia' %}
-                        <span class="badge badge-anemia">Thiếu Máu</span>
-                    {% elif pred.disease_type == 'liver' %}
-                        <span class="badge badge-liver">Bệnh Gan</span>
-                    {% elif pred.disease_type == 'kidney' %}
-                        <span class="badge badge-kidney">Bệnh Thận</span>
-                    {% else %}
-                        <span class="badge">{{ pred.disease_type }}</span>
-                    {% endif %}
-                    {% if pred.pdf_file %}
-                        <div style="margin-top: 8px;">
-                            <a href="/static/uploads/pdfs/{{ pred.pdf_file }}" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px;">
-                                <i class="fa-solid fa-file-pdf" style="color: #ef4444; font-size: 14px;"></i> Xem Bệnh Án
-                            </a>
-                        </div>
-                    {% endif %}
+                <td style="font-size: 13.5px; font-weight: 600; color: #374151;">
+                    {{ sess.created_at }}
                 </td>
                 <td style="font-size: 14.5px;">
                     {% if session.get('role') == 'doctor' %}
-                        <strong>{{ pred.patient_name }}</strong>
+                        <strong>{{ sess.patient_name }}</strong>
                     {% else %}
-                        <span>BS. {{ pred.doctor_name }}</span>
+                        <span>BS. {{ sess.doctor_name }}</span>
                     {% endif %}
                 </td>
                 <td>
-                    <div class="params-list">
-                        {% for key, val in pred.input_data.items() %}
-                            <span class="param-tag"><strong>{{ key }}:</strong> {{ val }}</span>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                        {% for badge in sess.disease_badges %}
+                            <span class="badge {{ badge.class }}" style="display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; 
+                                {% if badge.type != 'screening' %}
+                                    {% if badge.is_positive == 1 %}
+                                        background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
+                                    {% else %}
+                                        background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;
+                                    {% endif %}
+                                {% else %}
+                                    background-color: #f5f3ff; color: #4f46e5; border: 1px solid #ddd6fe;
+                                {% endif %}">
+                                {% if badge.type != 'screening' %}
+                                    {% if badge.is_positive == 1 %}
+                                        <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px; font-size: 11px;"></i>
+                                    {% else %}
+                                        <i class="fa-solid fa-circle-check" style="margin-right: 6px; font-size: 11px;"></i>
+                                    {% endif %}
+                                {% else %}
+                                    <i class="fa-solid fa-shield-halved" style="margin-right: 6px; font-size: 11px;"></i>
+                                {% endif %}
+                                {{ badge.name }}
+                            </span>
                         {% endfor %}
                     </div>
                 </td>
                 <td>
-                    {% if pred.is_positive == 1 %}
-                        <span class="result-badge result-risk">
-                            <i class="fa-solid fa-circle-exclamation"></i> Có Nguy Cơ
-                        </span>
-                    {% else %}
-                        <span class="result-badge result-normal">
-                            <i class="fa-solid fa-circle-check"></i> Bình Thường
-                        </span>
-                    {% endif %}
-                </td>
-                <td style="font-size: 13px; color: var(--text-muted);">
-                    {{ pred.created_at }}
+                    <a href="/comprehensive_report?{% if sess.session_id %}session_id={{ sess.session_id }}{% else %}patient_id={{ sess.patient_id }}{% endif %}" class="btn-action btn-history" style="background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); border: none; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2); padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                        <i class="fa-solid fa-folder-open"></i> Xem Hồ Sơ Tổng Hợp
+                    </a>
                 </td>
                 {% if session.get('role') == 'doctor' %}
                 <td>
-                    <form action="/delete/{{ pred.id }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bản ghi chẩn đoán này?');">
-                        <button type="submit" class="btn-delete" title="Xóa lịch sử">
-                            <i class="fa-solid fa-trash-can"></i>
+                    <form action="/delete_session" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa toàn bộ phiên chẩn đoán này? Dữ liệu của tất cả các chuyên khoa khám trong phiên này sẽ bị xóa bỏ hoàn toàn.');">
+                        <input type="hidden" name="session_id" value="{{ sess.session_id or '' }}">
+                        <input type="hidden" name="patient_id" value="{{ sess.patient_id or '' }}">
+                        <input type="hidden" name="created_at" value="{{ sess.created_at }}">
+                        <button type="submit" class="btn-delete" title="Xóa phiên chẩn đoán">
+                            <i class="fa-solid fa-trash-can" style="font-size: 14px;"></i>
                         </button>
                     </form>
                 </td>

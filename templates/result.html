@@ -207,17 +207,17 @@
             {% set next_path = path_map[next_first] %}
             {% set next_name = name_map[next_first] %}
             
-            <a href="{{ back_url }}?patient_id={{ patient_id }}&next_disease={{ next_disease }}&from_pathway={{ from_pathway }}" class="btn-action btn-back">
+            <a href="{{ back_url }}?patient_id={{ patient_id }}&next_disease={{ next_disease }}&from_pathway={{ from_pathway }}&session_id={{ session_id }}" class="btn-action btn-back">
                 <i class="fa-solid fa-arrow-left"></i> Quay lại kiểm tra
             </a>
-            <a href="{{ next_path }}?patient_id={{ patient_id }}&next_disease={{ next_remaining }}&from_pathway=1" class="btn-action btn-history" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+            <a href="{{ next_path }}?patient_id={{ patient_id }}&next_disease={{ next_remaining }}&from_pathway=1&session_id={{ session_id }}" class="btn-action btn-history" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
                 Tiếp tục khám bệnh lý tiếp theo trong lộ trình: {{ next_name }} <i class="fa-solid fa-arrow-right-right-long"></i>
             </a>
         {% elif from_pathway == '1' %}
-            <a href="{{ back_url }}?patient_id={{ patient_id }}&next_disease={{ next_disease }}&from_pathway={{ from_pathway }}" class="btn-action btn-back">
+            <a href="{{ back_url }}?patient_id={{ patient_id }}&next_disease={{ next_disease }}&from_pathway={{ from_pathway }}&session_id={{ session_id }}" class="btn-action btn-back">
                 <i class="fa-solid fa-arrow-left"></i> Quay lại kiểm tra
             </a>
-            <a href="/comprehensive_report?patient_id={{ patient_id }}" class="btn-action btn-history" style="background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); border: none; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);">
+            <a href="/comprehensive_report?patient_id={{ patient_id }}&session_id={{ session_id }}" class="btn-action btn-history" style="background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); border: none; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);">
                 Tiến tới Báo cáo Tổng hợp Toàn diện <i class="fa-solid fa-square-poll-horizontal"></i>
             </a>
         {% else %}

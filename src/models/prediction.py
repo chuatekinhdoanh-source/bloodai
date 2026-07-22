@@ -2,7 +2,7 @@ from datetime import datetime
 from bson.objectid import ObjectId
 from models.db import db
 
-def save_prediction(patient_id, patient_name, doctor_id, doctor_name, disease_type, input_dict, result_text, is_positive, pdf_file=None):
+def save_prediction(patient_id, patient_name, doctor_id, doctor_name, disease_type, input_dict, result_text, is_positive, pdf_file=None, session_id=None):
     """Lưu kết quả dự đoán mới vào MongoDB, liên kết với patient_id và doctor_id."""
     if db is None:
         print("[DATABASE] Error: Database connection is not initialized.")
@@ -20,6 +20,7 @@ def save_prediction(patient_id, patient_name, doctor_id, doctor_name, disease_ty
             'result': result_text,
             'is_positive': int(is_positive),
             'pdf_file': pdf_file,
+            'session_id': session_id,
             'created_at': datetime.now()
         }
         res = predictions_col.insert_one(doc)
@@ -64,7 +65,8 @@ def get_predictions(user_id, role, disease_filter=None, limit=100):
                 'patient_name': doc.get('patient_name', 'Chưa rõ'),
                 'doctor_id': doc.get('doctor_id', ''),
                 'doctor_name': doc.get('doctor_name', 'Chưa rõ'),
-                'pdf_file': doc.get('pdf_file', None)
+                'pdf_file': doc.get('pdf_file', None),
+                'session_id': doc.get('session_id', None)
             })
         return results
     except Exception as e:

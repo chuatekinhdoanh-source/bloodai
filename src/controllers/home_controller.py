@@ -52,7 +52,8 @@ def diabetes():
             
     next_disease = request.args.get('next_disease', '')
     from_pathway = request.args.get('from_pathway', '')
-    return render_template('index.html', patients=patients, patient=patient, screening_data=screening_data, next_disease=next_disease, from_pathway=from_pathway)
+    session_id = request.args.get('session_id', '')
+    return render_template('index.html', patients=patients, patient=patient, screening_data=screening_data, next_disease=next_disease, from_pathway=from_pathway, session_id=session_id)
 
 @home_bp.route('/anemia')
 @login_required
@@ -70,7 +71,8 @@ def anemia():
             
     next_disease = request.args.get('next_disease', '')
     from_pathway = request.args.get('from_pathway', '')
-    return render_template('anemia.html', patients=patients, patient=patient, screening_data=screening_data, next_disease=next_disease, from_pathway=from_pathway)
+    session_id = request.args.get('session_id', '')
+    return render_template('anemia.html', patients=patients, patient=patient, screening_data=screening_data, next_disease=next_disease, from_pathway=from_pathway, session_id=session_id)
 
 @home_bp.route('/liver')
 @login_required
@@ -88,7 +90,8 @@ def liver():
             
     next_disease = request.args.get('next_disease', '')
     from_pathway = request.args.get('from_pathway', '')
-    return render_template('liver.html', patients=patients, patient=patient, screening_data=screening_data, next_disease=next_disease, from_pathway=from_pathway)
+    session_id = request.args.get('session_id', '')
+    return render_template('liver.html', patients=patients, patient=patient, screening_data=screening_data, next_disease=next_disease, from_pathway=from_pathway, session_id=session_id)
 
 @home_bp.route('/kidney')
 @login_required
@@ -106,7 +109,8 @@ def kidney():
             
     next_disease = request.args.get('next_disease', '')
     from_pathway = request.args.get('from_pathway', '')
-    return render_template('kidney.html', patients=patients, patient=patient, screening_data=screening_data, next_disease=next_disease, from_pathway=from_pathway)
+    session_id = request.args.get('session_id', '')
+    return render_template('kidney.html', patients=patients, patient=patient, screening_data=screening_data, next_disease=next_disease, from_pathway=from_pathway, session_id=session_id)
 
 @home_bp.route('/screening')
 @login_required
