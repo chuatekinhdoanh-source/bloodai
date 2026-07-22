@@ -22,4 +22,4 @@ app.register_blueprint(history_bp)
 app.register_blueprint(appointment_bp)
 
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=True)

@@ -47,12 +47,17 @@ def predict_diabetes():
         }
         save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'diabetes', input_dict, result, prediction)
         
+        next_disease = request.form.get('next_disease', '')
+        from_pathway = request.form.get('from_pathway', '')
         return render_template('result.html', 
                                disease_name="Phân tích nguy cơ Tiểu Đường (XGBoost)",
                                result_text=result,
                                is_positive=prediction,
                                back_url="/",
-                               input_data=input_dict)
+                               input_data=input_dict,
+                               patient_id=patient_id,
+                               next_disease=next_disease,
+                               from_pathway=from_pathway)
     except Exception as e:
         return f"<h3>Lỗi Tiểu đường: {e}</h3>"
 
@@ -91,12 +96,17 @@ def predict_anemia():
         }
         save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'anemia', input_dict, result, prediction)
         
+        next_disease = request.form.get('next_disease', '')
+        from_pathway = request.form.get('from_pathway', '')
         return render_template('result.html', 
                                disease_name="Phân tích nguy cơ Thiếu Máu (CatBoost)",
                                result_text=result,
                                is_positive=prediction,
                                back_url="/anemia",
-                               input_data=input_dict)
+                               input_data=input_dict,
+                               patient_id=patient_id,
+                               next_disease=next_disease,
+                               from_pathway=from_pathway)
     except Exception as e:
         return f"<h3>Lỗi Thiếu máu: {e}</h3>"
 
@@ -113,6 +123,10 @@ def predict_liver():
         data = request.form.to_dict()
         # Loại bỏ patient_id trước khi đưa vào DataFrame dự đoán của mô hình AI
         del data['patient_id']
+        if 'next_disease' in data:
+            del data['next_disease']
+        if 'from_pathway' in data:
+            del data['from_pathway']
         
         for key in data: data[key] = float(data[key])
         input_df = pd.DataFrame([data])
@@ -132,12 +146,17 @@ def predict_liver():
         
         save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'liver', input_dict, result, prediction)
         
+        next_disease = request.form.get('next_disease', '')
+        from_pathway = request.form.get('from_pathway', '')
         return render_template('result.html', 
                                disease_name="Phân tích nguy cơ Bệnh Gan (Random Forest)",
                                result_text=result,
                                is_positive=prediction,
                                back_url="/liver",
-                               input_data=input_dict)
+                               input_data=input_dict,
+                               patient_id=patient_id,
+                               next_disease=next_disease,
+                               from_pathway=from_pathway)
     except Exception as e:
         return f"<h3>Lỗi Bệnh Gan: {e}</h3>"
 
@@ -154,6 +173,10 @@ def predict_kidney():
         data = request.form.to_dict()
         # Loại bỏ patient_id trước khi đưa vào DataFrame dự đoán của mô hình AI
         del data['patient_id']
+        if 'next_disease' in data:
+            del data['next_disease']
+        if 'from_pathway' in data:
+            del data['from_pathway']
         
         for key in data: data[key] = float(data[key])
         input_df = pd.DataFrame([data])
@@ -174,12 +197,17 @@ def predict_kidney():
         
         save_prediction(patient_id, patient_name, session['user_id'], session['fullname'], 'kidney', data, result, prediction)
         
+        next_disease = request.form.get('next_disease', '')
+        from_pathway = request.form.get('from_pathway', '')
         return render_template('result.html', 
                                disease_name="Phân tích nguy cơ Bệnh Thận (LightGBM)",
                                result_text=result,
                                is_positive=prediction,
                                back_url="/kidney",
-                               input_data=data)
+                               input_data=data,
+                               patient_id=patient_id,
+                               next_disease=next_disease,
+                               from_pathway=from_pathway)
     except Exception as e:
         return f"<h3>Lỗi Bệnh Thận: {e}</h3>"
 
@@ -822,6 +850,91 @@ def predict_screening():
             except Exception as pwd_err:
                 print(f"[PREDICT] Error calculating temp password: {pwd_err}")
 
+        session['screening_data'] = {
+            'patient_id': patient_id,
+            'Age': age,
+            'age': age,
+            'Gender': gender,
+            'Glucose': glucose,
+            'bgr': glucose,
+            'Hemoglobin': hemo,
+            'hemo': hemo,
+            'BloodPressure': bp,
+            'bp': bp,
+            'BMI': bmi,
+            'MCV': mcv,
+            'MCH': mch,
+            'MCHC': mchc,
+            'Total_Bilirubin': total_bilirubin,
+            'Direct_Bilirubin': direct_bilirubin,
+            'Alkaline_Phosphotase': alkaline_phosphotase,
+            'Alamine_Aminotransferase': alamine_aminotransferase,
+            'Aspartate_Aminotransferase': aspartate_aminotransferase,
+            'Total_Protiens': total_proteins,
+            'Albumin': albumin,
+            'Albumin_and_Globulin_Ratio': albumin_globulin_ratio,
+            'sg': sg,
+            'al': al,
+            'su': su,
+            'bu': bu,
+            'sc': sc,
+            'sod': sod,
+            'pot': pot,
+            'rbc': rbc,
+            'pc': pc,
+            'pcc': pcc,
+            'ba': ba,
+            'pcv': pcv,
+            'wc': wc,
+            'rc': rc,
+            'htn': htn,
+            'dm': dm,
+            'cad': cad,
+            'appet': appet,
+            'pe': pe,
+            'ane': ane,
+            'Pregnancies': pregnancies,
+            'SkinThickness': skin,
+            'Insulin': insulin,
+            'DiabetesPedigreeFunction': dpf
+        }
+
+        # Calculate clinical pathway (Step 2 & 3)
+        name_to_id = {
+            'Tiểu Đường': 'diabetes',
+            'Thiếu Máu': 'anemia',
+            'Bệnh Gan': 'liver',
+            'Bệnh Thận': 'kidney'
+        }
+        
+        # Filter for diseases with pred == 1 and sort by probability descending
+        high_risk_diseases = [d for d in diseases if d['pred'] == 1]
+        high_risk_diseases_sorted = sorted(high_risk_diseases, key=lambda x: x['prob'], reverse=True)
+        
+        pathway_seq = [name_to_id[d['name']] for d in high_risk_diseases_sorted]
+        pathway_str = ",".join(pathway_seq)
+
+        pathway_buttons = []
+        for i, d in enumerate(high_risk_diseases_sorted):
+            d_id = name_to_id[d['name']]
+            remaining_ids = pathway_seq[i+1:]
+            remaining_str = ",".join(remaining_ids)
+            path = '/' if d_id == 'diabetes' else f'/{d_id}'
+            url = f"{path}?patient_id={patient_id}&current_disease={d_id}&next_disease={remaining_str}&from_pathway=1"
+            pathway_buttons.append({
+                'name': d['name'],
+                'url': url,
+                'priority': i + 1,
+                'prob': d['prob']
+            })
+        
+        # Save a dedicated 'screening' record to easily load the general screening initial state later (Step 4)
+        save_prediction(
+            patient_id, patient_name, session['user_id'], session['fullname'], 
+            'screening', {'diseases': diseases, 'inputs': input_summary, 'pathway': pathway_seq}, 
+            status_text, risk_count, pdf_file=pdf_file
+        )
+
         return render_template('screening_result.html',
                                patient_name=patient_name,
                                status_color=status_color,
@@ -834,7 +947,10 @@ def predict_screening():
                                sms_message=sms_message,
                                sms_phone=sms_phone,
                                patient=patient,
-                               temp_password=temp_password)
+                               temp_password=temp_password,
+                               pathway_str=pathway_str,
+                               high_risk_diseases=high_risk_diseases_sorted,
+                               pathway_buttons=pathway_buttons)
     except Exception as e:
         return f"<h3>Lỗi Sàng lọc tổng quát: {e}</h3>"
 
@@ -1167,5 +1283,129 @@ def digitize_pdf():
         
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'Lỗi số hóa bệnh án: {str(e)}'}), 500
+
+
+@prediction_bp.route('/comprehensive_report')
+@login_required
+@doctor_required
+def comprehensive_report():
+    try:
+        patient_id = request.args.get('patient_id')
+        if not patient_id:
+            return "<h3>Lỗi: Thiếu mã bệnh nhân (patient_id).</h3>", 400
+            
+        patient = get_user_by_id(patient_id)
+        if not patient:
+            return "<h3>Lỗi: Không tìm thấy bệnh nhân.</h3>", 404
+            
+        # Get latest 'screening' record
+        from models.db import db
+        predictions_col = db['predictions']
+        
+        screening_rec = predictions_col.find_one(
+            {'patient_id': str(patient_id), 'disease_type': 'screening'},
+            sort=[('created_at', -1)]
+        )
+        
+        # Load the latest predictions for the 4 diseases
+        specialist_preds = {}
+        disease_types = ['diabetes', 'anemia', 'liver', 'kidney']
+        for dt in disease_types:
+            pred_doc = predictions_col.find_one(
+                {'patient_id': str(patient_id), 'disease_type': dt},
+                sort=[('created_at', -1)]
+            )
+            if pred_doc:
+                specialist_preds[dt] = pred_doc
+                
+        # Determine if each disease has been specialized-analyzed after screening
+        has_specialized = {}
+        for dt in disease_types:
+            has_specialized[dt] = False
+            if dt in specialist_preds:
+                # If there's a screening record, compare timestamps or IDs
+                if screening_rec:
+                    # If the specialist prediction is newer than screening
+                    if specialist_preds[dt].get('created_at') > screening_rec.get('created_at'):
+                        has_specialized[dt] = True
+                else:
+                    # No screening record, if it exists we treat it as specialized
+                    has_specialized[dt] = True
+
+        # Construct general screening data from screening_rec or fallback
+        if screening_rec:
+            screening_data = screening_rec.get('input_data', {})
+            screening_status = {
+                'color': 'red' if screening_rec.get('is_positive', 0) > 2 else ('yellow' if screening_rec.get('is_positive', 0) > 0 else 'green'),
+                'text': screening_rec.get('result', ''),
+                'risk_count': screening_rec.get('is_positive', 0),
+                'created_at': screening_rec.get('created_at').strftime('%Y-%m-%d %H:%M:%S') if screening_rec.get('created_at') else ''
+            }
+        else:
+            # Fallback if no screening record
+            screening_data = {}
+            risk_count = sum(1 for dt in disease_types if dt in specialist_preds and specialist_preds[dt].get('is_positive') == 1)
+            screening_status = {
+                'color': 'red' if risk_count > 2 else ('yellow' if risk_count > 0 else 'green'),
+                'text': 'CẦN ĐI KHÁM CHUYÊN KHOA NGAY' if risk_count > 2 else ('CẦN THEO DÕI SÁT SAO' if risk_count > 0 else 'AN TOÀN'),
+                'risk_count': risk_count,
+                'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+
+        # Generate AI advice
+        # Based on active risks in the latest specialist predictions
+        active_risks = []
+        for dt in disease_types:
+            if dt in specialist_preds and specialist_preds[dt].get('is_positive') == 1:
+                active_risks.append(dt)
+                
+        ai_advice = ""
+        if not active_risks:
+            ai_advice = "Các kết quả phân tích hiện tại đều trong ngưỡng an toàn. Bệnh nhân có sức khỏe bình thường. Đề nghị duy trì lối sống lành mạnh, ăn uống đầy đủ dinh dưỡng và khám định kỳ mỗi 6 tháng."
+        else:
+            advice_parts = []
+            risk_names = {
+                'diabetes': 'Tiểu Đường',
+                'anemia': 'Thiếu Máu',
+                'liver': 'Bệnh Gan',
+                'kidney': 'Bệnh Thận'
+            }
+            risk_labels = [risk_names[r] for r in active_risks]
+            advice_parts.append(f"Ghi nhận bệnh nhân có nguy cơ cao đồng thời đối với các bệnh lý: {', '.join(risk_labels)}.")
+            
+            # Combine Liver & Kidney
+            if 'liver' in active_risks and 'kidney' in active_risks:
+                advice_parts.append("⚠️ LƯU Ý ĐẶC BIỆT: Do bệnh nhân vừa có nguy cơ về Gan vừa có nguy cơ về Thận, cần đặc biệt lưu ý khi kê đơn thuốc. Tránh các thuốc gây độc cho gan/thận kết hợp, điều chỉnh liều lượng các thuốc chuyển hóa qua gan và đào thải qua thận (như kháng sinh nhóm Aminoglycosid, NSAIDs). Nên ưu tiên các biện pháp hỗ trợ và bảo vệ nhu mô gan/thận.")
+            elif 'liver' in active_risks:
+                advice_parts.append("Lưu ý bệnh lý Gan: Cần hạn chế các thuốc chuyển hóa mạnh qua gan (như Paracetamol liều cao), kiểm soát chế độ ăn giảm mỡ, kiêng rượu bia và các chất kích thích.")
+            elif 'kidney' in active_risks:
+                advice_parts.append("Lưu ý bệnh lý Thận: Tránh sử dụng các thuốc kháng viêm không steroid (NSAIDs) vì có thể làm suy giảm thêm chức năng cầu thận. Theo dõi sát huyết áp và hạn chế lượng muối trong chế độ ăn.")
+                
+            # Diabetes complications with Kidney/Anemia
+            if 'diabetes' in active_risks:
+                if 'kidney' in active_risks:
+                    advice_parts.append("Sự kết hợp giữa Tiểu Đường và Bệnh Thận (Biến chứng thận do đái tháo đường): Cần kiểm soát chặt chẽ chỉ số đường huyết (HbA1c < 7.0%) và huyết áp (< 130/80 mmHg). Ưu tiên nhóm thuốc hạ đường huyết có tác dụng bảo vệ thận như ức chế SGLT2 hoặc đồng vận thụ thể GLP-1.")
+                else:
+                    advice_parts.append("Lưu ý bệnh lý Tiểu Đường: Kiểm soát chế độ ăn giảm carbohydrate, theo dõi đường huyết mao mạch định kỳ và duy trì vận động thể chất đều đặn.")
+                    
+            if 'anemia' in active_risks:
+                if 'kidney' in active_risks:
+                    advice_parts.append("Thiếu máu kết hợp suy giảm chức năng Thận: Nghi ngờ thiếu máu do giảm sinh Erythropoietin (EPO) từ thận. Khuyến nghị định lượng sắt huyết thanh, ferritin và xem xét bổ sung EPO tái tổ hợp dưới sự giám sát chuyên khoa.")
+                else:
+                    advice_parts.append("Lưu ý Thiếu Máu: Tăng cường dinh dưỡng giàu sắt, vitamin B12 và acid folic. Tìm kiếm nguyên nhân mất máu ẩn (nếu có).")
+                    
+            advice_parts.append("Đề nghị bệnh nhân tái khám chuyên khoa định kỳ và tuân thủ phác đồ điều trị phối hợp của bác sĩ chỉ định.")
+            ai_advice = " ".join(advice_parts)
+
+        return render_template('comprehensive_report.html',
+                               patient=patient,
+                               screening_rec=screening_rec,
+                               screening_data=screening_data,
+                               screening_status=screening_status,
+                               specialist_preds=specialist_preds,
+                               has_specialized=has_specialized,
+                               ai_advice=ai_advice)
+    except Exception as e:
+        return f"<h3>Lỗi tải báo cáo tổng hợp: {e}</h3>", 500
 
 
