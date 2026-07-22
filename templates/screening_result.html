@@ -319,6 +319,14 @@
             opacity: 1;
         }
     }
+    .btn-advanced {
+        transition: all 0.2s ease;
+    }
+    .btn-advanced:hover {
+        transform: translateY(-1.5px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4) !important;
+        filter: brightness(1.05);
+    }
 </style>
 
 <div class="report-container">
@@ -370,9 +378,10 @@
                 <thead>
                     <tr>
                         <th style="width: 25%;">Bệnh Lý Sàng Lọc</th>
-                        <th style="width: 25%;">Thuật Toán AI Sử Dụng</th>
-                        <th style="width: 30%;">Xác Suất Nguy Cơ</th>
-                        <th style="width: 20%;">Đánh Giá Chuyên Khoa</th>
+                        <th style="width: 20%;">Thuật Toán AI Sử Dụng</th>
+                        <th style="width: 22%;">Xác Suất Nguy Cơ</th>
+                        <th style="width: 15%;">Đánh Giá</th>
+                        <th style="width: 18%; text-align: center;">Khám Chuyên Sâu</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -416,12 +425,74 @@
                                 </span>
                             {% endif %}
                         </td>
+                        <td style="text-align: center;">
+                            {% if ds.pred == 1 %}
+                                <a href="{% if ds.name == 'Tiểu Đường' %}/?from_screening=1&patient_id={{ patient.id }}{% elif ds.name == 'Thiếu Máu' %}/anemia?from_screening=1&patient_id={{ patient.id }}{% elif ds.name == 'Bệnh Gan' %}/liver?from_screening=1&patient_id={{ patient.id }}{% else %}/kidney?from_screening=1&patient_id={{ patient.id }}{% endif %}" class="btn-action-report btn-advanced" style="padding: 6px 12px; font-size: 12px; font-weight: 600; text-decoration: none; border-radius: 8px; background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%); color: white; display: inline-flex; align-items: center; gap: 6px; border: none; cursor: pointer; box-shadow: 0 2px 6px rgba(79, 70, 229, 0.2);">
+                                    <i class="fa-solid fa-notes-medical"></i> Khám chuyên sâu
+                                </a>
+                            {% else %}
+                                <span style="font-size: 12.5px; color: #a1a1aa; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border: 1px dashed #e4e4e7; border-radius: 8px;">
+                                    <i class="fa-solid fa-lock" style="font-size: 11px;"></i> Chưa cần thiết
+                                </span>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
+
+    <!-- LỘ TRÌNH KHÁM CHUYÊN SÂU (CLINICAL PATHWAY) -->
+    {% if pathway_buttons %}
+    <div class="pathway-section" style="background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%); border-radius: 16px; border: 1px solid #e5e7eb; border-left: 5px solid #ef4444; padding: 24px; margin-bottom: 35px; box-shadow: var(--card-shadow); animation: slideIn 0.5s ease-out;">
+        <h4 style="font-size: 16px; font-weight: 700; color: #111827; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-route" style="color: #ef4444; font-size: 20px;"></i>
+            Lộ Trình Khám Chuyên Sâu Khuyến Nghị (Clinical Pathway)
+        </h4>
+        <p style="font-size: 14px; color: #4b5563; margin: 0 0 20px 0; line-height: 1.5;">
+            <span style="background-color: #fef2f2; color: #ef4444; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 13px;">⚠️ CẢNH BÁO NGUY CƠ</span>
+            Bệnh nhân có nguy cơ cao ở <strong>{{ pathway_buttons|length }}</strong> hạng mục. Hãy thực hiện khám chuyên sâu lần lượt theo lộ trình ưu tiên (sắp xếp theo xác suất nguy cơ giảm dần):
+        </p>
+        
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            {% for btn in pathway_buttons %}
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; background: white; border: 1px solid #e5e7eb; padding: 18px 24px; border-radius: 12px; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);" class="pathway-step-card">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: {% if btn.priority == 1 %}#fee2e2{% else %}#f3f4f6{% endif %}; color: {% if btn.priority == 1 %}#ef4444{% else %}#4b5563{% endif %}; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; border: 1px solid {% if btn.priority == 1 %}#fecaca{% else %}#e5e7eb{% endif %};">
+                        {{ btn.priority }}
+                    </div>
+                    <div>
+                        <h5 style="margin: 0; font-size: 15px; font-weight: 700; color: #111827;">{{ btn.name }}</h5>
+                        <div style="font-size: 13px; color: #6b7280; margin-top: 2px;">
+                            Nguy cơ xác định qua AI: <strong style="color: #ef4444;">{{ btn.prob }}%</strong>
+                        </div>
+                    </div>
+                </div>
+                <a href="{{ btn.url }}" class="btn-action-report btn-pathway-action" style="background: linear-gradient(135deg, {% if btn.priority == 1 %}#ef4444 0%, #dc2626 100%{% else %}#4f46e5 0%, #4338ca 100%{% endif %}); color: white; border: none; font-size: 13.5px; font-weight: 700; padding: 10px 20px; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: all 0.2s;">
+                    {% if btn.priority == 1 %}
+                        Tiến hành khám chuyên sâu: {{ btn.name }} (Ưu tiên số 1) ➔
+                    {% else %}
+                        Khám chuyên sâu: {{ btn.name }} (Tiếp theo) ➔
+                    {% endif %}
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <style>
+        .pathway-step-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.04) !important;
+            border-color: #ef4444 !important;
+        }
+        .btn-pathway-action:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+            filter: brightness(1.05);
+        }
+    </style>
+    {% endif %}
 
     <!-- AUTO-NOTE GENERATOR CARD -->
     <div class="result-card" style="background: white; border-radius: 16px; border: 1px solid #e5e7eb; border-left: 5px solid #10b981; padding: 24px; margin-bottom: 35px; box-shadow: var(--card-shadow); animation: slideIn 0.5s ease-out;">

@@ -54,37 +54,67 @@
     .params-summary {
         background-color: #f9fafb;
         border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 20px;
+        border-radius: 16px;
+        padding: 24px;
         margin-bottom: 35px;
-        max-width: 600px;
+        max-width: 800px;
         margin-left: auto;
         margin-right: auto;
         text-align: left;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
     }
     
     .params-summary h4 {
-        margin: 0 0 12px 0;
-        font-size: 14px;
-        color: #374151;
-        font-weight: 600;
-        border-bottom: 1px solid #e5e7eb;
-        padding-bottom: 6px;
+        margin: 0 0 16px 0;
+        font-size: 15px;
+        color: #1f2937;
+        font-weight: 700;
+        border-bottom: 1.5px solid #e5e7eb;
+        padding-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     
     .params-summary-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+        gap: 12px;
     }
     
     .param-item {
-        font-size: 12px;
-        color: #4b5563;
+        background-color: #ffffff;
+        border: 1.5px solid #f3f4f6;
+        border-radius: 10px;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: all 0.2s ease;
     }
     
-    .param-item strong {
+    .param-item:hover {
+        border-color: var(--primary);
+        box-shadow: 0 4px 10px rgba(79, 70, 229, 0.06);
+        transform: translateY(-1.5px);
+    }
+    
+    .param-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        line-height: 1.4;
+        margin-bottom: 6px;
+        word-break: break-word;
+    }
+    
+    .param-val {
+        font-size: 15px;
+        font-weight: 700;
         color: #111827;
+        word-break: break-all;
     }
     
     .btn-group {
@@ -150,23 +180,54 @@
 
     <!-- HIỂN THỊ TÓM TẮT CHỈ SỐ ĐÃ NHẬP -->
     <div class="params-summary">
-        <h4>Chỉ số sinh hóa bạn đã nhập:</h4>
+        <h4><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Chỉ số sinh hóa bạn đã nhập:</h4>
         <div class="params-summary-grid">
             {% for key, val in input_data.items() %}
                 <div class="param-item">
-                    <strong>{{ key }}:</strong> {{ val }}
+                    <span class="param-label">{{ key }}</span>
+                    <span class="param-val">{{ val }}</span>
                 </div>
             {% endfor %}
         </div>
     </div>
     
     <div class="btn-group">
-        <a href="{{ back_url }}" class="btn-action btn-back">
-            <i class="fa-solid fa-arrow-left"></i> Quay lại kiểm tra
-        </a>
-        <a href="/history" class="btn-action btn-history">
-            Xem lịch sử chẩn đoán <i class="fa-solid fa-arrow-right"></i>
-        </a>
+        {% if next_disease %}
+            {% set parts = next_disease.split(',') %}
+            {% set next_first = parts[0] %}
+            {% if parts|length > 1 %}
+                {% set next_remaining = parts[1:]|join(',') %}
+            {% else %}
+                {% set next_remaining = '' %}
+            {% endif %}
+            
+            {% set path_map = {'diabetes': '/diabetes', 'anemia': '/anemia', 'liver': '/liver', 'kidney': '/kidney'} %}
+            {% set name_map = {'diabetes': 'Tiểu Đường', 'anemia': 'Thiếu Máu', 'liver': 'Bệnh Gan', 'kidney': 'Bệnh Thận'} %}
+            
+            {% set next_path = path_map[next_first] %}
+            {% set next_name = name_map[next_first] %}
+            
+            <a href="{{ back_url }}?patient_id={{ patient_id }}&next_disease={{ next_disease }}&from_pathway={{ from_pathway }}" class="btn-action btn-back">
+                <i class="fa-solid fa-arrow-left"></i> Quay lại kiểm tra
+            </a>
+            <a href="{{ next_path }}?patient_id={{ patient_id }}&next_disease={{ next_remaining }}&from_pathway=1" class="btn-action btn-history" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                Tiếp tục khám bệnh lý tiếp theo trong lộ trình: {{ next_name }} <i class="fa-solid fa-arrow-right-right-long"></i>
+            </a>
+        {% elif from_pathway == '1' %}
+            <a href="{{ back_url }}?patient_id={{ patient_id }}&next_disease={{ next_disease }}&from_pathway={{ from_pathway }}" class="btn-action btn-back">
+                <i class="fa-solid fa-arrow-left"></i> Quay lại kiểm tra
+            </a>
+            <a href="/comprehensive_report?patient_id={{ patient_id }}" class="btn-action btn-history" style="background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); border: none; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);">
+                Tiến tới Báo cáo Tổng hợp Toàn diện <i class="fa-solid fa-square-poll-horizontal"></i>
+            </a>
+        {% else %}
+            <a href="{{ back_url }}" class="btn-action btn-back">
+                <i class="fa-solid fa-arrow-left"></i> Quay lại kiểm tra
+            </a>
+            <a href="/history" class="btn-action btn-history">
+                Xem lịch sử chẩn đoán <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

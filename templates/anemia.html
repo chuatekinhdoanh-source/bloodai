@@ -7,17 +7,62 @@
     <h2>Phân Tích Thiếu Máu (CatBoost)</h2>
 </div>
 
+{% if patient %}
+<div class="patient-info-banner" style="background: #ffffff; border-left: 5px solid var(--primary); border-radius: 16px; padding: 20px 24px; margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; box-shadow: var(--card-shadow); border: 1px solid #e5e7eb;">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(79, 70, 229, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            <i class="fa-solid fa-user-injured"></i>
+        </div>
+        <div>
+            <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Bệnh nhân đang khám chuyên sâu</div>
+            <div style="font-size: 19px; font-weight: 700; color: #111827;">{{ patient.fullname }}</div>
+        </div>
+    </div>
+    <div style="display: flex; gap: 35px; flex-wrap: wrap;">
+        <div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Mã bệnh nhân</div>
+            <div style="font-size: 15px; font-weight: 700; color: #111827; font-family: monospace;">{{ patient.id }}</div>
+        </div>
+        <div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Ngày sinh</div>
+            <div style="font-size: 15px; font-weight: 700; color: #111827;">{{ patient.dob if patient.dob else 'Chưa cập nhật' }}</div>
+        </div>
+        <div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Tuổi</div>
+            <div style="font-size: 15px; font-weight: 700; color: #111827;">
+                {% if screening_data and (screening_data.Age or screening_data.age) %}
+                    {{ (screening_data.Age or screening_data.age)|int }} tuổi
+                {% else %}
+                    Chưa có thông tin tuổi
+                {% endif %}
+            </div>
+        </div>
+        {% if patient.phone %}
+        <div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Số điện thoại</div>
+            <div style="font-size: 15px; font-weight: 700; color: #111827;">{{ patient.phone }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 <form action="/predict_anemia" method="POST">
+    <input type="hidden" name="next_disease" value="{{ next_disease }}">
+    <input type="hidden" name="from_pathway" value="{{ from_pathway }}">
+    {% if patient %}
+    <input type="hidden" name="patient_id" value="{{ patient.id }}">
+    {% endif %}
     <div class="form-grid">
         <!-- CHỌN BỆNH NHÂN XÉT NGHIỆM -->
         <div class="input-group" style="grid-column: span 2; margin-bottom: 10px;">
             <label style="font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-hospital-user" style="font-size: 16px;"></i> Chọn Bệnh Nhân Xét Nghiệm
             </label>
-            <select name="patient_id" required style="width: 100%; padding: 14px; border: 1.5px solid #e5e7eb; border-radius: 12px; font-size: 14.5px; outline: none; background-color: #f9fafb; font-family: inherit; color: #111827; box-sizing: border-box; transition: all 0.3s ease;">
+            <select name="patient_id" {% if patient %}disabled{% endif %} required style="width: 100%; padding: 14px; border: 1.5px solid #e5e7eb; border-radius: 12px; font-size: 14.5px; outline: none; background-color: #f9fafb; font-family: inherit; color: #111827; box-sizing: border-box; transition: all 0.3s ease;">
                 <option value="">-- Click để chọn bệnh nhân nhận kết quả chẩn đoán --</option>
                 {% for pt in patients %}
-                    <option value="{{ pt.id }}">{{ pt.fullname }} (@{{ pt.username }})</option>
+                    <option value="{{ pt.id }}" {% if screening_data and screening_data.patient_id == pt.id %}selected{% endif %}>{{ pt.fullname }} (@{{ pt.username }})</option>
                 {% endfor %}
             </select>
             {% if not patients %}
@@ -27,23 +72,23 @@
 
         <div class="input-group">
             <label>Giới tính (0: Nữ, 1: Nam)</label>
-            <input type="number" step="1" name="Gender" placeholder="Nhập 0 hoặc 1" required>
+            <input type="number" step="1" name="Gender" value="{% if screening_data %}{{ screening_data.Gender|int }}{% endif %}" placeholder="Nhập 0 hoặc 1" required>
         </div>
         <div class="input-group">
             <label>Huyết sắc tố (Hemoglobin)</label>
-            <input type="number" step="0.1" name="Hemoglobin" required>
+            <input type="number" step="0.1" name="Hemoglobin" value="{% if screening_data %}{{ screening_data.Hemoglobin }}{% endif %}" required>
         </div>
         <div class="input-group">
             <label>MCH (Lượng Hb trung bình)</label>
-            <input type="number" step="0.1" name="MCH" required>
+            <input type="number" step="0.1" name="MCH" value="{% if screening_data %}{{ screening_data.MCH }}{% endif %}" required>
         </div>
         <div class="input-group">
             <label>MCHC (Nồng độ Hb)</label>
-            <input type="number" step="0.1" name="MCHC" required>
+            <input type="number" step="0.1" name="MCHC" value="{% if screening_data %}{{ screening_data.MCHC }}{% endif %}" required>
         </div>
         <div class="input-group">
             <label>MCV (Thể tích hồng cầu)</label>
-            <input type="number" step="0.1" name="MCV" required>
+            <input type="number" step="0.1" name="MCV" value="{% if screening_data %}{{ screening_data.MCV }}{% endif %}" required>
         </div>
     </div>
     

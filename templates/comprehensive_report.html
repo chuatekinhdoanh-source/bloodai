@@ -1,0 +1,616 @@
+{% extends "base.html" %}
+{% set active_page = "history" %}
+
+{% block content %}
+<style>
+    .comprehensive-container {
+        max-width: 950px;
+        margin: 0 auto;
+        padding: 10px 0;
+    }
+    
+    .report-card-container {
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid #e5e7eb;
+        padding: 40px;
+        margin-bottom: 30px;
+    }
+
+    /* Print Header Styles (hidden on screen) */
+    .print-only-header {
+        display: none;
+    }
+
+    /* Professional Hospital Header style */
+    .hospital-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 2px solid #4f46e5;
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+    }
+    .hospital-logo h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 800;
+        color: #1e1b4b;
+        letter-spacing: 0.5px;
+    }
+    .hospital-logo p {
+        margin: 4px 0 0 0;
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+    .report-meta {
+        text-align: right;
+        font-size: 13px;
+        color: #4b5563;
+        line-height: 1.5;
+    }
+
+    /* Section Styles */
+    .section-block {
+        margin-bottom: 35px;
+    }
+    .section-block-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e1b4b;
+        border-left: 4px solid #4f46e5;
+        padding-left: 10px;
+        margin-top: 0;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Admin Table Grid */
+    .admin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        background-color: #f9fafb;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        margin-bottom: 30px;
+    }
+    .admin-item {
+        font-size: 14px;
+        color: #4b5563;
+    }
+    .admin-item strong {
+        color: #111827;
+        font-weight: 600;
+    }
+
+    /* Screening Risk Badges and Cards */
+    .risk-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+    .risk-summary-card {
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        padding: 16px;
+        background: #ffffff;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+        position: relative;
+        overflow: hidden;
+    }
+    .risk-summary-card.at-risk {
+        border-color: #fca5a5;
+        background-color: #fef2f2;
+    }
+    .risk-label-badge {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 4px 8px;
+        border-radius: 6px;
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+    .risk-label-badge.risk {
+        background: #fecaca;
+        color: #b91c1c;
+    }
+    .risk-label-badge.normal {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    /* Specialist Check Cards */
+    .specialist-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    .specialist-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        background: #ffffff;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+    }
+    .specialist-card-header {
+        background-color: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 16px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .specialist-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #111827;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .specialist-status {
+        font-size: 12.5px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .specialist-card-body {
+        padding: 20px 24px;
+    }
+    .param-pill-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+    }
+    .param-pill {
+        background: #f3f4f6;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 13px;
+        color: #4b5563;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .param-pill strong {
+        color: #111827;
+    }
+
+    /* Actions */
+    .actions-row {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    .btn-comprehensive {
+        padding: 14px 28px;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        transition: all 0.3s ease;
+    }
+    .btn-comprehensive-primary {
+        background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+        color: white;
+        box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    }
+    .btn-comprehensive-primary:hover {
+        background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+    }
+    .btn-comprehensive-secondary {
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+    .btn-comprehensive-secondary:hover {
+        background: #e5e7eb;
+        transform: translateY(-2px);
+    }
+
+    /* PRINT LAYOUT ADJUSTMENTS */
+    @media print {
+        body {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-size: 12px;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar, .header, .actions-row, #printExamBtn {
+            display: none !important;
+        }
+        .main-wrapper {
+            overflow: visible !important;
+            padding: 0 !important;
+        }
+        .content {
+            padding: 0 !important;
+        }
+        .comprehensive-container {
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .report-card-container {
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .admin-grid {
+            background-color: transparent !important;
+            border: 1px solid #000000 !important;
+            border-radius: 0 !important;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            padding: 10px;
+        }
+        .specialist-card {
+            border: 1px solid #000000 !important;
+            border-radius: 0 !important;
+            page-break-inside: avoid;
+            margin-bottom: 20px;
+        }
+        .specialist-card-header {
+            background-color: transparent !important;
+            border-bottom: 1px solid #000000 !important;
+            padding: 10px;
+        }
+        .specialist-card-body {
+            padding: 10px;
+        }
+        .param-pill {
+            background: transparent !important;
+            border-bottom: 1px dotted #ccc;
+            border-radius: 0 !important;
+            padding: 4px 0 !important;
+        }
+        .print-only-header {
+            display: block !important;
+        }
+        .hospital-header {
+            border-bottom: 2px solid #000000 !important;
+        }
+        .section-block-title {
+            border-left: 4px solid #000000 !important;
+        }
+    }
+</style>
+
+<div class="comprehensive-container">
+    <div class="report-card-container">
+        
+        <!-- HOSPITAL & CLINIC HEADER -->
+        <div class="hospital-header">
+            <div class="hospital-logo">
+                <h2>BLOODCARE AI CLINIC</h2>
+                <p>Hệ thống Y tế Chẩn đoán Số hóa Sinh hóa Máu Thông minh</p>
+            </div>
+            <div class="report-meta">
+                <strong>Mã bệnh án:</strong> BC-{{ patient.id[:8] if patient.id|length > 8 else patient.id }}<br>
+                <strong>Ngày tạo báo cáo:</strong> {{ screening_status.created_at }}<br>
+                <strong>Bác sĩ chỉ định:</strong> {{ session.fullname }}
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #1e1b4b; text-transform: uppercase; letter-spacing: 0.5px;">Hồ Sơ Chẩn Đoán Sức Khỏe Toàn Diện</h1>
+            <p style="margin: 5px 0 0 0; font-size: 14px; color: var(--text-muted);">Tổng hợp phân tích từ các mô hình AI và kiểm tra chuyên khoa chuyên sâu</p>
+        </div>
+
+        <!-- 1. HÀNH CHÍNH BỆNH NHÂN -->
+        <div class="section-block">
+            <h4 class="section-block-title">
+                <i class="fa-solid fa-id-card"></i>
+                1. Thông tin hành chính bệnh nhân
+            </h4>
+            <div class="admin-grid">
+                <div class="admin-item">Họ và tên: <strong>{{ patient.fullname }}</strong></div>
+                <div class="admin-item">Giới tính: <strong>{% if patient.gender == 1 %}Nam{% elif patient.gender == 0 %}Nữ{% else %}Chưa cập nhật{% endif %}</strong></div>
+                <div class="admin-item">Ngày sinh: <strong>{{ patient.dob if patient.dob else 'Chưa cập nhật' }}</strong></div>
+                <div class="admin-item">Số điện thoại: <strong>{{ patient.phone if patient.phone else 'Chưa cập nhật' }}</strong></div>
+                <div class="admin-item">Email: <strong>{{ patient.email if patient.email else 'Chưa cập nhật' }}</strong></div>
+                <div class="admin-item">Tài khoản: <strong>@{{ patient.username }}</strong></div>
+            </div>
+        </div>
+
+        <!-- 2. KẾT QUẢ SÀNG LỌC BAN ĐẦU -->
+        <div class="section-block">
+            <h4 class="section-block-title">
+                <i class="fa-solid fa-shield-halved"></i>
+                2. Kết quả Sàng lọc Tổng quát ban đầu
+            </h4>
+            
+            <div style="background-color: {% if screening_status.color == 'red' %}#fef2f2{% elif screening_status.color == 'yellow' %}#fffbeb{% else %}#f0fdf4{% endif %}; border: 1.5px solid {% if screening_status.color == 'red' %}#fecaca{% elif screening_status.color == 'yellow' %}#fde68a{% else %}#bbf7d0{% endif %}; border-radius: 12px; padding: 20px; margin-bottom: 25px; display: flex; align-items: center; gap: 15px;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background-color: {% if screening_status.color == 'red' %}#fee2e2{% elif screening_status.color == 'yellow' %}#fef3c7{% else %}#dcfce7{% endif %}; color: {% if screening_status.color == 'red' %}#ef4444{% elif screening_status.color == 'yellow' %}#b45309{% else %}#15803d{% endif %}; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                    {% if screening_status.color == 'red' %}
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                    {% elif screening_status.color == 'yellow' %}
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    {% else %}
+                        <i class="fa-solid fa-heart-pulse"></i>
+                    {% endif %}
+                </div>
+                <div>
+                    <div style="font-size: 12px; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px;">Trạng thái Sàng lọc Tổng quát ban đầu:</div>
+                    <div style="font-size: 16px; font-weight: 800; color: {% if screening_status.color == 'red' %}#991b1b{% elif screening_status.color == 'yellow' %}#92400e{% else %}#166534{% endif %}; margin-top: 2px;">
+                        {{ screening_status.text }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="risk-summary-grid">
+                {% if screening_rec %}
+                    {% for ds in screening_rec.get('input_data', {}).get('diseases', []) %}
+                    <div class="risk-summary-card {% if ds.pred == 1 %}at-risk{% endif %}">
+                        <span class="risk-label-badge {% if ds.pred == 1 %}risk{% else %}normal{% endif %}">
+                            {{ ds.result_text }}
+                        </span>
+                        <h5 style="margin: 0 0 6px 0; font-size: 14.5px; font-weight: 700; color: #111827;">{{ ds.name }}</h5>
+                        <div style="font-size: 12px; color: var(--text-muted);">
+                            Xác suất: <strong>{{ ds.prob }}%</strong>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Fallback visualization -->
+                    {% for dt_name, dt_slug in [('Tiểu Đường', 'diabetes'), ('Thiếu Máu', 'anemia'), ('Bệnh Gan', 'liver'), ('Bệnh Thận', 'kidney')] %}
+                        {% set pred_doc = specialist_preds.get(dt_slug) %}
+                        <div class="risk-summary-card {% if pred_doc and pred_doc.is_positive == 1 %}at-risk{% endif %}">
+                            <span class="risk-label-badge {% if pred_doc and pred_doc.is_positive == 1 %}risk{% elif pred_doc %}normal{% else %}normal{% endif %}">
+                                {% if pred_doc and pred_doc.is_positive == 1 %}CÓ NGUY CƠ{% else %}BÌNH THƯỜNG{% endif %}
+                            </span>
+                            <h5 style="margin: 0 0 6px 0; font-size: 14.5px; font-weight: 700; color: #111827;">{{ dt_name }}</h5>
+                            <div style="font-size: 12px; color: var(--text-muted);">
+                                Trạng thái chẩn đoán
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 3. KẾT QUẢ CHI TIẾT CHUYÊN KHOA -->
+        <div class="section-block">
+            <h4 class="section-block-title">
+                <i class="fa-solid fa-file-waveform"></i>
+                3. Báo cáo chẩn đoán chi tiết của từng Chuyên khoa
+            </h4>
+
+            <div class="specialist-list">
+                <!-- A. CHUYÊN KHOA GAN -->
+                <div class="specialist-card">
+                    <div class="specialist-card-header">
+                        <div class="specialist-title">
+                            <i class="fa-solid fa-lungs" style="color: #f59e0b; font-size: 18px;"></i>
+                            <span>Chuyên Khoa Gan (Mô hình Random Forest)</span>
+                        </div>
+                        <div class="specialist-status">
+                            {% if has_specialized.liver %}
+                                <span style="color: #10b981;"><i class="fa-solid fa-circle-check"></i> ĐÃ KHÁM CHUYÊN SÂU</span>
+                            {% else %}
+                                <span style="color: #9ca3af;"><i class="fa-solid fa-circle-minus"></i> DỮ LIỆU SÀNG LỌC CHƯA CẬP NHẬT</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="specialist-card-body">
+                        {% if 'liver' in specialist_preds %}
+                            {% set lpred = specialist_preds['liver'] %}
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px dashed #e5e7eb; padding-bottom: 12px;">
+                                <div style="font-size: 14px; color: #4b5563;">Kết luận chẩn đoán:</div>
+                                <span style="font-weight: 800; font-size: 15px; padding: 6px 12px; border-radius: 8px; {% if lpred.is_positive == 1 %}background-color: #fef2f2; color: #ef4444;{% else %}background-color: #f0fdf4; color: #10b981;{% endif %}">
+                                    {{ lpred.result }}
+                                </span>
+                            </div>
+                            <div class="param-pill-grid">
+                                {% for key, val in lpred.input_data.items() %}
+                                <div class="param-pill">
+                                    <span>{{ key }}</span>
+                                    <strong>{{ val }}</strong>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p style="margin: 0; color: #6b7280; font-style: italic; font-size: 13.5px;">Chưa có dữ liệu xét nghiệm chuyên khoa gan cho bệnh nhân này.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- B. CHUYÊN KHOA THẬN -->
+                <div class="specialist-card">
+                    <div class="specialist-card-header">
+                        <div class="specialist-title">
+                            <i class="fa-solid fa-shield-virus" style="color: #06b6d4; font-size: 18px;"></i>
+                            <span>Chuyên Khoa Thận (Mô hình LightGBM)</span>
+                        </div>
+                        <div class="specialist-status">
+                            {% if has_specialized.kidney %}
+                                <span style="color: #10b981;"><i class="fa-solid fa-circle-check"></i> ĐÃ KHÁM CHUYÊN SÂU</span>
+                            {% else %}
+                                <span style="color: #9ca3af;"><i class="fa-solid fa-circle-minus"></i> DỮ LIỆU SÀNG LỌC CHƯA CẬP NHẬT</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="specialist-card-body">
+                        {% if 'kidney' in specialist_preds %}
+                            {% set kpred = specialist_preds['kidney'] %}
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px dashed #e5e7eb; padding-bottom: 12px;">
+                                <div style="font-size: 14px; color: #4b5563;">Kết luận chẩn đoán:</div>
+                                <span style="font-weight: 800; font-size: 15px; padding: 6px 12px; border-radius: 8px; {% if kpred.is_positive == 1 %}background-color: #fef2f2; color: #ef4444;{% else %}background-color: #f0fdf4; color: #10b981;{% endif %}">
+                                    {{ kpred.result }}
+                                </span>
+                            </div>
+                            <div class="param-pill-grid">
+                                {% for key, val in kpred.input_data.items() %}
+                                    {# Show only top critical parameters to avoid bloating #}
+                                    {% if key in ['Tuổi', 'Huyết áp', 'Tỷ trọng nước tiểu', 'Albumin nước tiểu', 'Đường nước tiểu', 'Ure máu', 'Creatinine huyết thanh', 'Natri', 'Kali', 'Hemoglobin', 'Thể tích hồng cầu (PCV)', 'Số lượng bạch cầu', 'Tăng huyết áp', 'Tiểu đường', 'Thiếu máu'] %}
+                                    <div class="param-pill">
+                                        <span>{{ key }}</span>
+                                        <strong>{{ val }}</strong>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p style="margin: 0; color: #6b7280; font-style: italic; font-size: 13.5px;">Chưa có dữ liệu xét nghiệm chuyên khoa thận cho bệnh nhân này.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- C. TIỂU ĐƯỜNG -->
+                <div class="specialist-card">
+                    <div class="specialist-card-header">
+                        <div class="specialist-title">
+                            <i class="fa-solid fa-droplet" style="color: #4f46e5; font-size: 18px;"></i>
+                            <span>Chuyên Khoa Đái Tháo Đường (Mô hình XGBoost)</span>
+                        </div>
+                        <div class="specialist-status">
+                            {% if has_specialized.diabetes %}
+                                <span style="color: #10b981;"><i class="fa-solid fa-circle-check"></i> ĐÃ KHÁM CHUYÊN SÂU</span>
+                            {% else %}
+                                <span style="color: #9ca3af;"><i class="fa-solid fa-circle-minus"></i> DỮ LIỆU SÀNG LỌC CHƯA CẬP NHẬT</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="specialist-card-body">
+                        {% if 'diabetes' in specialist_preds %}
+                            {% set dpred = specialist_preds['diabetes'] %}
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px dashed #e5e7eb; padding-bottom: 12px;">
+                                <div style="font-size: 14px; color: #4b5563;">Kết luận chẩn đoán:</div>
+                                <span style="font-weight: 800; font-size: 15px; padding: 6px 12px; border-radius: 8px; {% if dpred.is_positive == 1 %}background-color: #fef2f2; color: #ef4444;{% else %}background-color: #f0fdf4; color: #10b981;{% endif %}">
+                                    {{ dpred.result }}
+                                </span>
+                            </div>
+                            <div class="param-pill-grid">
+                                {% for key, val in dpred.input_data.items() %}
+                                <div class="param-pill">
+                                    <span>{{ key }}</span>
+                                    <strong>{{ val }}</strong>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p style="margin: 0; color: #6b7280; font-style: italic; font-size: 13.5px;">Chưa có dữ liệu xét nghiệm chuyên khoa tiểu đường cho bệnh nhân này.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- D. THIẾU MÁU -->
+                <div class="specialist-card">
+                    <div class="specialist-card-header">
+                        <div class="specialist-title">
+                            <i class="fa-solid fa-vial-virus" style="color: #ec4899; font-size: 18px;"></i>
+                            <span>Chuyên Khoa Huyết Học - Thiếu Máu (Mô hình CatBoost)</span>
+                        </div>
+                        <div class="specialist-status">
+                            {% if has_specialized.anemia %}
+                                <span style="color: #10b981;"><i class="fa-solid fa-circle-check"></i> ĐÃ KHÁM CHUYÊN SÂU</span>
+                            {% else %}
+                                <span style="color: #9ca3af;"><i class="fa-solid fa-circle-minus"></i> DỮ LIỆU SÀNG LỌC CHƯA CẬP NHẬT</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="specialist-card-body">
+                        {% if 'anemia' in specialist_preds %}
+                            {% set apred = specialist_preds['anemia'] %}
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px dashed #e5e7eb; padding-bottom: 12px;">
+                                <div style="font-size: 14px; color: #4b5563;">Kết luận chẩn đoán:</div>
+                                <span style="font-weight: 800; font-size: 15px; padding: 6px 12px; border-radius: 8px; {% if apred.is_positive == 1 %}background-color: #fef2f2; color: #ef4444;{% else %}background-color: #f0fdf4; color: #10b981;{% endif %}">
+                                    {{ apred.result }}
+                                </span>
+                            </div>
+                            <div class="param-pill-grid">
+                                {% for key, val in apred.input_data.items() %}
+                                <div class="param-pill">
+                                    <span>{{ key }}</span>
+                                    <strong>{{ val }}</strong>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p style="margin: 0; color: #6b7280; font-style: italic; font-size: 13.5px;">Chưa có dữ liệu xét nghiệm chuyên khoa thiếu máu cho bệnh nhân này.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. LỜI KHUYÊN AI KẾT HỢP -->
+        <div class="section-block">
+            <h4 class="section-block-title">
+                <i class="fa-solid fa-file-signature"></i>
+                4. Nhận xét lâm sàng & Lời khuyên kết hợp tổng thể từ AI
+            </h4>
+            <div style="background-color: #f5f3ff; border: 1.5px solid #ddd6fe; border-left: 5px solid #4f46e5; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.01);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <i class="fa-solid fa-brain" style="color: #4f46e5; font-size: 20px;"></i>
+                    <strong style="color: #1e1b4b; font-size: 15px;">Clinical Medical Advice (AI Synthesized Summary)</strong>
+                </div>
+                <p style="font-size: 14.5px; color: #374151; line-height: 1.7; margin: 0; text-align: justify;">
+                    {{ ai_advice }}
+                </p>
+            </div>
+        </div>
+
+        <!-- SIGNATURES (Print layout oriented) -->
+        <div class="print-only-header" style="margin-top: 40px;">
+            <div style="display: flex; justify-content: space-between; padding: 0 20px; font-size: 13px;">
+                <div style="text-align: center; width: 200px;">
+                    <strong>Chữ ký Bệnh nhân</strong><br>
+                    <span style="font-size: 11px; color: #6b7280; font-style: italic;">(Ký và ghi rõ họ tên)</span>
+                    <div style="height: 70px;"></div>
+                    <div style="border-bottom: 1px dotted #ccc; width: 100%;"></div>
+                </div>
+                <div style="text-align: center; width: 250px;">
+                    <strong>Bác sĩ chuyên khoa chỉ định</strong><br>
+                    <span style="font-size: 11px; color: #6b7280; font-style: italic;">(Ký tên và đóng dấu y khoa)</span>
+                    <div style="height: 70px;"></div>
+                    <strong>{{ session.fullname }}</strong>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ACTION ROW -->
+    <div class="actions-row">
+        <button type="button" class="btn-comprehensive btn-comprehensive-secondary" onclick="window.history.back();">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại trang trước
+        </button>
+        <button type="button" id="printExamBtn" class="btn-comprehensive btn-comprehensive-primary">
+            <i class="fa-solid fa-print"></i> In trọn bộ hồ sơ bệnh án
+        </button>
+        <a href="/screening" class="btn-comprehensive btn-comprehensive-secondary" style="background-color: #10b981; color: white; border: none; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);">
+            Sàng lọc ca mới <i class="fa-solid fa-arrow-right"></i>
+        </a>
+    </div>
+</div>
+
+<script>
+    document.getElementById('printExamBtn').addEventListener('click', function() {
+        window.print();
+    });
+</script>
+{% endblock %}

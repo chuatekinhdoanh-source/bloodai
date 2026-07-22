@@ -7,17 +7,62 @@
     <h2>Phân Tích Bệnh Thận (LightGBM)</h2>
 </div>
 
+{% if patient %}
+<div class="patient-info-banner" style="background: #ffffff; border-left: 5px solid var(--primary); border-radius: 16px; padding: 20px 24px; margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; box-shadow: var(--card-shadow); border: 1px solid #e5e7eb;">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(79, 70, 229, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            <i class="fa-solid fa-user-injured"></i>
+        </div>
+        <div>
+            <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Bệnh nhân đang khám chuyên sâu</div>
+            <div style="font-size: 19px; font-weight: 700; color: #111827;">{{ patient.fullname }}</div>
+        </div>
+    </div>
+    <div style="display: flex; gap: 35px; flex-wrap: wrap;">
+        <div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Mã bệnh nhân</div>
+            <div style="font-size: 15px; font-weight: 700; color: #111827; font-family: monospace;">{{ patient.id }}</div>
+        </div>
+        <div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Ngày sinh</div>
+            <div style="font-size: 15px; font-weight: 700; color: #111827;">{{ patient.dob if patient.dob else 'Chưa cập nhật' }}</div>
+        </div>
+        <div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Tuổi</div>
+            <div style="font-size: 15px; font-weight: 700; color: #111827;">
+                {% if screening_data and (screening_data.Age or screening_data.age) %}
+                    {{ (screening_data.Age or screening_data.age)|int }} tuổi
+                {% else %}
+                    Chưa có thông tin tuổi
+                {% endif %}
+            </div>
+        </div>
+        {% if patient.phone %}
+        <div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Số điện thoại</div>
+            <div style="font-size: 15px; font-weight: 700; color: #111827;">{{ patient.phone }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 <form action="/predict_kidney" method="POST">
+    <input type="hidden" name="next_disease" value="{{ next_disease }}">
+    <input type="hidden" name="from_pathway" value="{{ from_pathway }}">
+    {% if patient %}
+    <input type="hidden" name="patient_id" value="{{ patient.id }}">
+    {% endif %}
     <div class="form-grid">
         <!-- CHỌN BỆNH NHÂN XÉT NGHIỆM -->
         <div class="input-group" style="grid-column: span 2; margin-bottom: 10px;">
             <label style="font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-hospital-user" style="font-size: 16px;"></i> Chọn Bệnh Nhân Xét Nghiệm
             </label>
-            <select name="patient_id" required style="width: 100%; padding: 14px; border: 1.5px solid #e5e7eb; border-radius: 12px; font-size: 14.5px; outline: none; background-color: #f9fafb; font-family: inherit; color: #111827; box-sizing: border-box; transition: all 0.3s ease;">
+            <select name="patient_id" {% if patient %}disabled{% endif %} required style="width: 100%; padding: 14px; border: 1.5px solid #e5e7eb; border-radius: 12px; font-size: 14.5px; outline: none; background-color: #f9fafb; font-family: inherit; color: #111827; box-sizing: border-box; transition: all 0.3s ease;">
                 <option value="">-- Click để chọn bệnh nhân nhận kết quả chẩn đoán --</option>
                 {% for pt in patients %}
-                    <option value="{{ pt.id }}">{{ pt.fullname }} (@{{ pt.username }})</option>
+                    <option value="{{ pt.id }}" {% if screening_data and screening_data.patient_id == pt.id %}selected{% endif %}>{{ pt.fullname }} (@{{ pt.username }})</option>
                 {% endfor %}
             </select>
             {% if not patients %}
@@ -26,30 +71,30 @@
         </div>
 
         <!-- 24 Chỉ số chuẩn từ kidney.csv -->
-        <div class="input-group"><label>age (Tuổi)</label><input type="number" step="0.1" name="age" value="48" required></div>
-        <div class="input-group"><label>bp (Huyết áp)</label><input type="number" step="0.1" name="bp" value="80" required></div>
-        <div class="input-group"><label>sg (Trọng lượng riêng)</label><input type="number" step="0.001" name="sg" value="1.020" required></div>
-        <div class="input-group"><label>al (Albumin)</label><input type="number" step="0.1" name="al" value="1" required></div>
-        <div class="input-group"><label>su (Đường)</label><input type="number" step="0.1" name="su" value="0" required></div>
-        <div class="input-group"><label>rbc (Hồng cầu - 0/1)</label><input type="number" step="0.1" name="rbc" value="1" required></div>
-        <div class="input-group"><label>pc (Tế bào mủ - 0/1)</label><input type="number" step="0.1" name="pc" value="1" required></div>
-        <div class="input-group"><label>pcc (Cụm TB mủ - 0/1)</label><input type="number" step="0.1" name="pcc" value="0" required></div>
-        <div class="input-group"><label>ba (Vi khuẩn - 0/1)</label><input type="number" step="0.1" name="ba" value="0" required></div>
-        <div class="input-group"><label>bgr (Đường huyết)</label><input type="number" step="0.1" name="bgr" value="121" required></div>
-        <div class="input-group"><label>bu (Ure máu)</label><input type="number" step="0.1" name="bu" value="36" required></div>
-        <div class="input-group"><label>sc (Creatinine)</label><input type="number" step="0.1" name="sc" value="1.2" required></div>
-        <div class="input-group"><label>sod (Natri)</label><input type="number" step="0.1" name="sod" value="135" required></div>
-        <div class="input-group"><label>pot (Kali)</label><input type="number" step="0.1" name="pot" value="4.5" required></div>
-        <div class="input-group"><label>hemo (Hemoglobin)</label><input type="number" step="0.1" name="hemo" value="15.4" required></div>
-        <div class="input-group"><label>pcv (Thể tích HC)</label><input type="number" step="0.1" name="pcv" value="44" required></div>
-        <div class="input-group"><label>wc (Bạch cầu)</label><input type="number" step="0.1" name="wc" value="7800" required></div>
-        <div class="input-group"><label>rc (Lượng HC)</label><input type="number" step="0.1" name="rc" value="5.2" required></div>
-        <div class="input-group"><label>htn (Tăng HA - 0/1)</label><input type="number" step="0.1" name="htn" value="1" required></div>
-        <div class="input-group"><label>dm (Tiểu đường - 0/1)</label><input type="number" step="0.1" name="dm" value="1" required></div>
-        <div class="input-group"><label>cad (Mạch vành - 0/1)</label><input type="number" step="0.1" name="cad" value="0" required></div>
-        <div class="input-group"><label>appet (Thèm ăn - 0/1)</label><input type="number" step="0.1" name="appet" value="1" required></div>
-        <div class="input-group"><label>pe (Phù nề - 0/1)</label><input type="number" step="0.1" name="pe" value="0" required></div>
-        <div class="input-group"><label>ane (Thiếu máu - 0/1)</label><input type="number" step="0.1" name="ane" value="0" required></div>
+        <div class="input-group"><label>age (Tuổi)</label><input type="number" step="0.1" name="age" value="{% if screening_data %}{{ screening_data.age|int }}{% else %}48{% endif %}" required></div>
+        <div class="input-group"><label>bp (Huyết áp)</label><input type="number" step="0.1" name="bp" value="{% if screening_data %}{{ screening_data.bp }}{% else %}80{% endif %}" required></div>
+        <div class="input-group"><label>sg (Trọng lượng riêng)</label><input type="number" step="0.001" name="sg" value="{% if screening_data %}{{ screening_data.sg }}{% else %}1.020{% endif %}" required></div>
+        <div class="input-group"><label>al (Albumin)</label><input type="number" step="0.1" name="al" value="{% if screening_data %}{{ screening_data.al }}{% else %}1{% endif %}" required></div>
+        <div class="input-group"><label>su (Đường)</label><input type="number" step="0.1" name="su" value="{% if screening_data %}{{ screening_data.su }}{% else %}0{% endif %}" required></div>
+        <div class="input-group"><label>rbc (Hồng cầu - 0/1)</label><input type="number" step="0.1" name="rbc" value="{% if screening_data %}{{ screening_data.rbc }}{% else %}1{% endif %}" required></div>
+        <div class="input-group"><label>pc (Tế bào mủ - 0/1)</label><input type="number" step="0.1" name="pc" value="{% if screening_data %}{{ screening_data.pc }}{% else %}1{% endif %}" required></div>
+        <div class="input-group"><label>pcc (Cụm TB mủ - 0/1)</label><input type="number" step="0.1" name="pcc" value="{% if screening_data %}{{ screening_data.pcc }}{% else %}0{% endif %}" required></div>
+        <div class="input-group"><label>ba (Vi khuẩn - 0/1)</label><input type="number" step="0.1" name="ba" value="{% if screening_data %}{{ screening_data.ba }}{% else %}0{% endif %}" required></div>
+        <div class="input-group"><label>bgr (Đường huyết)</label><input type="number" step="0.1" name="bgr" value="{% if screening_data %}{{ screening_data.bgr }}{% else %}121{% endif %}" required></div>
+        <div class="input-group"><label>bu (Ure máu)</label><input type="number" step="0.1" name="bu" value="{% if screening_data %}{{ screening_data.bu }}{% else %}36{% endif %}" required></div>
+        <div class="input-group"><label>sc (Creatinine)</label><input type="number" step="0.1" name="sc" value="{% if screening_data %}{{ screening_data.sc }}{% else %}1.2{% endif %}" required></div>
+        <div class="input-group"><label>sod (Natri)</label><input type="number" step="0.1" name="sod" value="{% if screening_data %}{{ screening_data.sod }}{% else %}135{% endif %}" required></div>
+        <div class="input-group"><label>pot (Kali)</label><input type="number" step="0.1" name="pot" value="{% if screening_data %}{{ screening_data.pot }}{% else %}4.5{% endif %}" required></div>
+        <div class="input-group"><label>hemo (Hemoglobin)</label><input type="number" step="0.1" name="hemo" value="{% if screening_data %}{{ screening_data.hemo }}{% else %}15.4{% endif %}" required></div>
+        <div class="input-group"><label>pcv (Thể tích HC)</label><input type="number" step="0.1" name="pcv" value="{% if screening_data %}{{ screening_data.pcv }}{% else %}44{% endif %}" required></div>
+        <div class="input-group"><label>wc (Bạch cầu)</label><input type="number" step="0.1" name="wc" value="{% if screening_data %}{{ screening_data.wc }}{% else %}7800{% endif %}" required></div>
+        <div class="input-group"><label>rc (Lượng HC)</label><input type="number" step="0.1" name="rc" value="{% if screening_data %}{{ screening_data.rc }}{% else %}5.2{% endif %}" required></div>
+        <div class="input-group"><label>htn (Tăng HA - 0/1)</label><input type="number" step="0.1" name="htn" value="{% if screening_data %}{{ screening_data.htn }}{% else %}1{% endif %}" required></div>
+        <div class="input-group"><label>dm (Tiểu đường - 0/1)</label><input type="number" step="0.1" name="dm" value="{% if screening_data %}{{ screening_data.dm }}{% else %}1{% endif %}" required></div>
+        <div class="input-group"><label>cad (Mạch vành - 0/1)</label><input type="number" step="0.1" name="cad" value="{% if screening_data %}{{ screening_data.cad }}{% else %}0{% endif %}" required></div>
+        <div class="input-group"><label>appet (Thèm ăn - 0/1)</label><input type="number" step="0.1" name="appet" value="{% if screening_data %}{{ screening_data.appet }}{% else %}1{% endif %}" required></div>
+        <div class="input-group"><label>pe (Phù nề - 0/1)</label><input type="number" step="0.1" name="pe" value="{% if screening_data %}{{ screening_data.pe }}{% else %}0{% endif %}" required></div>
+        <div class="input-group"><label>ane (Thiếu máu - 0/1)</label><input type="number" step="0.1" name="ane" value="{% if screening_data %}{{ screening_data.ane }}{% else %}0{% endif %}" required></div>
     </div>
     
     <button type="submit" class="btn-submit">
