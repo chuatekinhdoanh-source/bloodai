@@ -1265,7 +1265,7 @@ def digitize_pdf():
                 except Exception as e:
                     print(f"[DIGITIZE] Error reading .env file: {e}")
             if not api_key:
-                api_key = "AQ.Ab8RN6K9CxLUAjk0HVXdeO4suPAaXnz0ATdvjNE4F6dPjxVqPA"
+                api_key = ""
                 
             import google.generativeai as genai
             from PIL import Image
