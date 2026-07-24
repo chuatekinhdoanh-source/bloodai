@@ -232,20 +232,23 @@
     
     <div class="digitize-container">
         <div class="digitize-content">
-            <i class="fa-solid fa-file-pdf" style="font-size: 40px; color: #ef4444; margin-bottom: 12px; display: inline-block;"></i>
-            <h4 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #1e1b4b;">Số hóa Bệnh án & Tự động điền dữ liệu</h4>
+            <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 12px;">
+                <i class="fa-solid fa-file-pdf" style="font-size: 40px; color: #ef4444;"></i>
+                <i class="fa-solid fa-file-image" style="font-size: 40px; color: #3b82f6;"></i>
+            </div>
+            <h4 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #1e1b4b;">Số hóa Bệnh án & Tự động điền dữ liệu (PDF / Hình ảnh)</h4>
             <p style="margin: 0 0 18px 0; font-size: 13.5px; color: var(--text-muted); line-height: 1.5; max-width: 600px; margin-left: auto; margin-right: auto;">
-                Tải lên file kết quả xét nghiệm cũ dạng PDF, hệ thống sẽ sử dụng AI để tự động trích xuất các chỉ số máu và điền vào form chỉ trong vài giây.
+                Tải lên kết quả xét nghiệm cũ dạng file PDF hoặc hình ảnh (JPG, PNG) của phiếu kết quả xét nghiệm máu (do bạn chụp bằng điện thoại), hệ thống sẽ sử dụng AI để tự động trích xuất các chỉ số máu và điền vào form chỉ trong vài giây.
             </p>
-            <input type="file" id="pdfUploadInput" accept=".pdf" style="display: none;">
+            <input type="file" id="pdfUploadInput" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
             <button type="button" id="uploadPdfBtn" class="upload-btn">
-                <i class="fa-solid fa-cloud-arrow-up"></i> Tải lên bệnh án cũ (PDF)
+                <i class="fa-solid fa-cloud-arrow-up"></i> Tải lên PDF hoặc Hình ảnh xét nghiệm
             </button>
             <span id="pdfFileName" style="display: block; margin-top: 10px; font-size: 13px; font-weight: 500; color: #10b981;"></span>
         </div>
         <div id="digitizeLoading" class="digitize-loading">
             <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 32px; color: var(--primary);"></i>
-            <span style="font-size: 14px; font-weight: 600; color: #374151;">Đang số hóa bệnh án và trích xuất chỉ số...</span>
+            <span style="font-size: 14px; font-weight: 600; color: #374151;">Đang số hóa tài liệu và trích xuất chỉ số...</span>
         </div>
     </div>
 
@@ -629,7 +632,7 @@
                     digitizeToast.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>Số hóa thành công!</strong> Đã tự động điền ${fieldsFilled.length} chỉ số: ${fieldsFilled.join(', ')}.`;
                 } else {
                     digitizeToast.style.backgroundColor = '#f59e0b'; // Yellow
-                    digitizeToast.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <strong>Cảnh báo:</strong> Đọc thành công nhưng không tìm thấy chỉ số máu tương ứng trong tệp PDF.`;
+                    digitizeToast.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <strong>Cảnh báo:</strong> Đọc thành công nhưng không tìm thấy chỉ số máu tương ứng trong tệp.`;
                 }
                 digitizeToast.style.display = 'block';
                 
@@ -641,7 +644,7 @@
 
             } else {
                 digitizeToast.style.backgroundColor = '#ef4444'; // Red
-                digitizeToast.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> <strong>Thất bại:</strong> ${data.message || 'Lỗi xử lý file PDF.'}`;
+                digitizeToast.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> <strong>Thất bại:</strong> ${data.message || 'Lỗi xử lý tài liệu.'}`;
                 digitizeToast.style.display = 'block';
             }
         } catch (error) {
