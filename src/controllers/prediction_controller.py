@@ -1251,94 +1251,117 @@ def digitize_pdf():
             text_preview = text[:200] + '...' if len(text) > 200 else text
 
         elif is_image:
-            api_key = os.environ.get("GEMINI_API_KEY")
-            if not api_key:
-                # Try to load from .env file in root
-                try:
-                    env_path = os.path.join(current_app.root_path, '..', '.env')
-                    if os.path.exists(env_path):
-                        with open(env_path, 'r', encoding='utf-8') as f:
-                            for line in f:
-                                if line.strip().startswith('GEMINI_API_KEY'):
-                                    api_key = line.split('=', 1)[1].strip().strip('"').strip("'")
-                                    break
-                except Exception as e:
-                    print(f"[DIGITIZE] Error reading .env file: {e}")
-            if not api_key:
+            api_key = None
+            # Try to load from .env file in root first (prioritize user configuration)
+            try:
+                env_path = os.path.join(current_app.root_path, '..', '.env')
+                if os.path.exists(env_path):
+                    with open(env_path, 'r', encoding='utf-8') as f:
+                        for line in f:
+                            if line.strip().startswith('GEMINI_API_KEY'):
+                                api_key = line.split('=', 1)[1].strip().strip('"').strip("'")
+                                break
+            except Exception as e:
+                print(f"[DIGITIZE] Error reading .env file: {e}")
                 
+            # If not in .env, check environment variables
+            if not api_key:
+                api_key = os.environ.get("GEMINI_API_KEY")
+                
+            if not api_key:
+                return jsonify({
+                    'status': 'error', 
+                    'message': 'Chưa cấu hình GEMINI_API_KEY. Vui lòng tạo tệp .env ở thư mục gốc và thêm GEMINI_API_KEY=khóa_của_bạn.'
+                }), 400
                 
             import google.generativeai as genai
             from PIL import Image
             import json
             
-            # Configure Gemini
-            genai.configure(api_key=api_key)
+            # Temporarily clear environment keys to avoid SDK conflict (mutually exclusive error)
+            old_gemini_key = os.environ.pop("GEMINI_API_KEY", None)
+            old_google_key = os.environ.pop("GOOGLE_API_KEY", None)
             
-            # Open Image
-            img_stream = io.BytesIO(file_bytes)
-            img = Image.open(img_stream)
-            
-            # Setup Prompt
-            prompt = """
-            Bạn là một trợ lý AI y tế chuyên nghiệp. Nhiệm vụ của bạn là phân tích hình ảnh phiếu kết quả xét nghiệm máu được cung cấp và trích xuất thông tin bệnh nhân cùng các chỉ số xét nghiệm lâm sàng.
-            
-            Vui lòng trả về kết quả dưới dạng JSON có cấu trúc chính xác như sau:
-            {
-                "patient_info": {
-                    "fullname": "Họ và tên bệnh nhân (chuỗi tiếng Việt có dấu, hoặc rỗng nếu không tìm thấy)",
-                    "dob": "Ngày sinh hoặc năm sinh dưới dạng chuỗi (ví dụ: '15/08/1990' hoặc '1990', hoặc rỗng)",
-                    "email": "Địa chỉ email (nếu có, hoặc rỗng)",
-                    "phone": "Số điện thoại (nếu có, hoặc rỗng)"
-                },
-                "extracted_data": {
-                    // Chỉ điền các chỉ số có xuất hiện trên phiếu kết quả xét nghiệm dưới dạng số (float hoặc int). 
-                    // KHÔNG tự chế/bịa chỉ số. Không điền các chỉ số không có trên hình ảnh.
-                    "Age": 45, // Tuổi (chỉ số nguyên. Nếu chỉ có dob/năm sinh, hãy tính tuổi bằng cách lấy 2026 trừ đi năm sinh)
-                    "Gender": 1, // Giới tính (1 là Nam, 0 là Nữ)
-                    "Glucose": 100.0, // Glucose (Đường huyết, mg/dL)
-                    "Hemoglobin": 14.0, // Hemoglobin (Huyết sắc tố, Hgb, g/dL)
-                    "BloodPressure": 80.0, // Huyết áp tâm trương (Diastolic blood pressure, lấy số sau hoặc số dưới trong cặp số huyết áp ví dụ 120/80 mmHg lấy 80)
-                    "BMI": 22.0, // Chỉ số khối cơ thể (BMI)
-                    "MCV": 90.0, // MCV (fL)
-                    "MCH": 28.0, // MCH (pg)
-                    "MCHC": 33.0, // MCHC (g/dL)
-                    "Total_Bilirubin": 1.0, // Bilirubin toàn phần (mg/dL)
-                    "Direct_Bilirubin": 0.3, // Bilirubin trực tiếp (mg/dL)
-                    "Alkaline_Phosphotase": 187.0, // Alkaline Phosphotase (ALP, U/L)
-                    "Alamine_Aminotransferase": 16.0, // ALT (SGPT, U/L)
-                    "Aspartate_Aminotransferase": 18.0, // AST (SGOT, U/L)
-                    "Total_Protiens": 6.8, // Protein toàn phần (g/dL)
-                    "Albumin": 3.3, // Albumin huyết (g/dL)
-                    "Albumin_and_Globulin_Ratio": 0.9, // Tỉ lệ Alb/Glob
-                    "sg": 1.020, // Tỷ trọng nước tiểu
-                    "al": 0, // Albumin niệu (Urine Albumin, số nguyên từ 0 đến 5)
-                    "su": 0, // Đường niệu (Urine Sugar, số nguyên từ 0 đến 5)
-                    "bu": 36.0, // Ure máu (Blood Urea)
-                    "sc": 1.2, // Creatinine (sc)
-                    "sod": 135.0, // Natri (mEq/L)
-                    "pot": 4.5, // Kali
-                    "pcv": 44.0, // Thể tích hồng cầu (%)
-                    "wc": 7800, // Số lượng bạch cầu (WBC. Nếu trên ảnh là 7.8 x10^3/uL hoặc tương đương, hãy chuyển đổi thành số nguyên tuyệt đối, ví dụ 7800)
-                    "rc": 5.2, // Số lượng hồng cầu (RBC, triệu/uL)
-                    
-                    // Các tiền sử/triệu chứng lâm sàng (nếu có đề cập rõ ràng, 1 là Có/True, 0 là Không/False):
-                    "htn": 0, // Tăng huyết áp
-                    "dm": 0, // Tiểu đường
-                    "cad": 0, // Bệnh mạch vành
-                    "pe": 0, // Phù chân
-                    "ane": 0, // Thiếu máu
-                    "appet": 1 // Trạng thái thèm ăn (1 là Ngon miệng, 0 là Chán ăn)
+            try:
+                # Configure Gemini based on key type (Standard API key vs OAuth Access Token)
+                if api_key.startswith(("ya29.", "AQ.")):
+                    from google.oauth2.credentials import Credentials
+                    creds = Credentials(token=api_key)
+                    genai.configure(credentials=creds, api_key=None)
+                else:
+                    genai.configure(api_key=api_key, credentials=None)
+                
+                # Open Image
+                img_stream = io.BytesIO(file_bytes)
+                img = Image.open(img_stream)
+                
+                # Setup Prompt
+                prompt = """
+                Bạn là một trợ lý AI y tế chuyên nghiệp. Nhiệm vụ của bạn là phân tích hình ảnh phiếu kết quả xét nghiệm máu được cung cấp và trích xuất thông tin bệnh nhân cùng các chỉ số xét nghiệm lâm sàng.
+                
+                Vui lòng trả về kết quả dưới dạng JSON có cấu trúc chính xác như sau:
+                {
+                    "patient_info": {
+                        "fullname": "Họ và tên bệnh nhân (chuỗi tiếng Việt có dấu, hoặc rỗng nếu không tìm thấy)",
+                        "dob": "Ngày sinh hoặc năm sinh dưới dạng chuỗi (ví dụ: '15/08/1990' hoặc '1990', hoặc rỗng)",
+                        "email": "Địa chỉ email (nếu có, hoặc rỗng)",
+                        "phone": "Số điện thoại (nếu có, hoặc rỗng)"
+                    },
+                    "extracted_data": {
+                        // Chỉ điền các chỉ số có xuất hiện trên phiếu kết quả xét nghiệm dưới dạng số (float hoặc int). 
+                        // KHÔNG tự chế/bịa chỉ số. Không điền các chỉ số không có trên hình ảnh.
+                        "Age": 45, // Tuổi (chỉ số nguyên. Nếu chỉ có dob/năm sinh, hãy tính tuổi bằng cách lấy 2026 trừ đi năm sinh)
+                        "Gender": 1, // Giới tính (1 là Nam, 0 là Nữ)
+                        "Glucose": 100.0, // Glucose (Đường huyết, mg/dL)
+                        "Hemoglobin": 14.0, // Hemoglobin (Huyết sắc tố, Hgb, g/dL)
+                        "BloodPressure": 80.0, // Huyết áp tâm trương (Diastolic blood pressure, lấy số sau hoặc số dưới trong cặp số huyết áp ví dụ 120/80 mmHg lấy 80)
+                        "BMI": 22.0, // Chỉ số khối cơ thể (BMI)
+                        "MCV": 90.0, // MCV (fL)
+                        "MCH": 28.0, // MCH (pg)
+                        "MCHC": 33.0, // MCHC (g/dL)
+                        "Total_Bilirubin": 1.0, // Bilirubin toàn phần (mg/dL)
+                        "Direct_Bilirubin": 0.3, // Bilirubin trực tiếp (mg/dL)
+                        "Alkaline_Phosphotase": 187.0, // Alkaline Phosphotase (ALP, U/L)
+                        "Alamine_Aminotransferase": 16.0, // ALT (SGPT, U/L)
+                        "Aspartate_Aminotransferase": 18.0, // AST (SGOT, U/L)
+                        "Total_Protiens": 6.8, // Protein toàn phần (g/dL)
+                        "Albumin": 3.3, // Albumin huyết (g/dL)
+                        "Albumin_and_Globulin_Ratio": 0.9, // Tỉ lệ Alb/Glob
+                        "sg": 1.020, // Tỷ trọng nước tiểu
+                        "al": 0, // Albumin niệu (Urine Albumin, số nguyên từ 0 đến 5)
+                        "su": 0, // Đường niệu (Urine Sugar, số nguyên từ 0 đến 5)
+                        "bu": 36.0, // Ure máu (Blood Urea)
+                        "sc": 1.2, // Creatinine (sc)
+                        "sod": 135.0, // Natri (mEq/L)
+                        "pot": 4.5, // Kali
+                        "pcv": 44.0, // Thể tích hồng cầu (%)
+                        "wc": 7800, // Số lượng bạch cầu (WBC. Nếu trên ảnh là 7.8 x10^3/uL hoặc tương đương, hãy chuyển đổi thành số nguyên tuyệt đối, ví dụ 7800)
+                        "rc": 5.2, // Số lượng hồng cầu (RBC, triệu/uL)
+                        
+                        // Các tiền sử/triệu chứng lâm sàng (nếu có đề cập rõ ràng, 1 là Có/True, 0 là Không/False):
+                        "htn": 0, // Tăng huyết áp
+                        "dm": 0, // Tiểu đường
+                        "cad": 0, // Bệnh mạch vành
+                        "pe": 0, // Phù chân
+                        "ane": 0, // Thiếu máu
+                        "appet": 1 // Trạng thái thèm ăn (1 là Ngon miệng, 0 là Chán ăn)
+                    }
                 }
-            }
-            
-            Chú ý: Trả về một chuỗi JSON hợp lệ duy nhất, không dùng markdown block (như ```json ... ```) xung quanh.
-            """
-            
-            model = genai.GenerativeModel("gemini-3.5-flash")
-            response = model.generate_content(
-                [img, prompt],
-                generation_config={"response_mime_type": "application/json"}
-            )
+                
+                Chú ý: Trả về một chuỗi JSON hợp lệ duy nhất, không dùng markdown block (như ```json ... ```) xung quanh.
+                """
+                
+                model = genai.GenerativeModel("gemini-3.5-flash")
+                response = model.generate_content(
+                    [img, prompt],
+                    generation_config={"response_mime_type": "application/json"}
+                )
+            finally:
+                # Restore environment variables
+                if old_gemini_key:
+                    os.environ["GEMINI_API_KEY"] = old_gemini_key
+                if old_google_key:
+                    os.environ["GOOGLE_API_KEY"] = old_google_key
             
             # Helper to clean response text
             def clean_json_text(text):
