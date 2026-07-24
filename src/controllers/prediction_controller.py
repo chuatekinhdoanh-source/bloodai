@@ -1302,53 +1302,57 @@ def digitize_pdf():
                 Vui lòng trả về kết quả dưới dạng JSON có cấu trúc chính xác như sau:
                 {
                     "patient_info": {
-                        "fullname": "Họ và tên bệnh nhân (chuỗi tiếng Việt có dấu, hoặc rỗng nếu không tìm thấy)",
+                        "fullname": "Họ và tên bệnh nhân (chuỗi tiếng Việt có dấu, viết hoa, hoặc rỗng nếu không tìm thấy)",
                         "dob": "Ngày sinh hoặc năm sinh dưới dạng chuỗi (ví dụ: '15/08/1990' hoặc '1990', hoặc rỗng)",
                         "email": "Địa chỉ email (nếu có, hoặc rỗng)",
                         "phone": "Số điện thoại (nếu có, hoặc rỗng)"
                     },
                     "extracted_data": {
-                        // Chỉ điền các chỉ số có xuất hiện trên phiếu kết quả xét nghiệm dưới dạng số (float hoặc int). 
-                        // KHÔNG tự chế/bịa chỉ số. Không điền các chỉ số không có trên hình ảnh.
-                        "Age": 45, // Tuổi (chỉ số nguyên. Nếu chỉ có dob/năm sinh, hãy tính tuổi bằng cách lấy 2026 trừ đi năm sinh)
-                        "Gender": 1, // Giới tính (1 là Nam, 0 là Nữ)
-                        "Glucose": 100.0, // Glucose (Đường huyết, mg/dL)
-                        "Hemoglobin": 14.0, // Hemoglobin (Huyết sắc tố, Hgb, g/dL)
-                        "BloodPressure": 80.0, // Huyết áp tâm trương (Diastolic blood pressure, lấy số sau hoặc số dưới trong cặp số huyết áp ví dụ 120/80 mmHg lấy 80)
-                        "BMI": 22.0, // Chỉ số khối cơ thể (BMI)
-                        "MCV": 90.0, // MCV (fL)
-                        "MCH": 28.0, // MCH (pg)
-                        "MCHC": 33.0, // MCHC (g/dL)
-                        "Total_Bilirubin": 1.0, // Bilirubin toàn phần (mg/dL)
-                        "Direct_Bilirubin": 0.3, // Bilirubin trực tiếp (mg/dL)
-                        "Alkaline_Phosphotase": 187.0, // Alkaline Phosphotase (ALP, U/L)
-                        "Alamine_Aminotransferase": 16.0, // ALT (SGPT, U/L)
-                        "Aspartate_Aminotransferase": 18.0, // AST (SGOT, U/L)
-                        "Total_Protiens": 6.8, // Protein toàn phần (g/dL)
-                        "Albumin": 3.3, // Albumin huyết (g/dL)
-                        "Albumin_and_Globulin_Ratio": 0.9, // Tỉ lệ Alb/Glob
-                        "sg": 1.020, // Tỷ trọng nước tiểu
-                        "al": 0, // Albumin niệu (Urine Albumin, số nguyên từ 0 đến 5)
-                        "su": 0, // Đường niệu (Urine Sugar, số nguyên từ 0 đến 5)
-                        "bu": 36.0, // Ure máu (Blood Urea)
-                        "sc": 1.2, // Creatinine (sc)
-                        "sod": 135.0, // Natri (mEq/L)
-                        "pot": 4.5, // Kali
-                        "pcv": 44.0, // Thể tích hồng cầu (%)
-                        "wc": 7800, // Số lượng bạch cầu (WBC. Nếu trên ảnh là 7.8 x10^3/uL hoặc tương đương, hãy chuyển đổi thành số nguyên tuyệt đối, ví dụ 7800)
-                        "rc": 5.2, // Số lượng hồng cầu (RBC, triệu/uL)
-                        
-                        // Các tiền sử/triệu chứng lâm sàng (nếu có đề cập rõ ràng, 1 là Có/True, 0 là Không/False):
-                        "htn": 0, // Tăng huyết áp
-                        "dm": 0, // Tiểu đường
-                        "cad": 0, // Bệnh mạch vành
-                        "pe": 0, // Phù chân
-                        "ane": 0, // Thiếu máu
-                        "appet": 1 // Trạng thái thèm ăn (1 là Ngon miệng, 0 là Chán ăn)
+                        "Age": 45,
+                        "Gender": 1,
+                        "Glucose": 100.0,
+                        "Hemoglobin": 14.0,
+                        "BloodPressure": 80.0,
+                        "BMI": 22.0,
+                        "MCV": 90.0,
+                        "MCH": 28.0,
+                        "MCHC": 33.0,
+                        "Total_Bilirubin": 1.0,
+                        "Direct_Bilirubin": 0.3,
+                        "Alkaline_Phosphotase": 187.0,
+                        "Alamine_Aminotransferase": 16.0,
+                        "Aspartate_Aminotransferase": 18.0,
+                        "Total_Protiens": 6.8,
+                        "Albumin": 3.3,
+                        "Albumin_and_Globulin_Ratio": 0.9,
+                        "sg": 1.020,
+                        "al": 0,
+                        "su": 0,
+                        "bu": 36.0,
+                        "sc": 1.2,
+                        "sod": 135.0,
+                        "pot": 4.5,
+                        "pcv": 44.0,
+                        "wc": 7800,
+                        "rc": 5.2,
+                        "htn": 0,
+                        "dm": 0,
+                        "cad": 0,
+                        "pe": 0,
+                        "ane": 0,
+                        "appet": 1
                     }
                 }
                 
-                Chú ý: Trả về một chuỗi JSON hợp lệ duy nhất, không dùng markdown block (như ```json ... ```) xung quanh.
+                Quy tắc trích xuất:
+                1. Chỉ điền các chỉ số thực tế có trên hình ảnh. KHÔNG tự ý bịa thêm chỉ số. Các chỉ số không có trên ảnh thì tuyệt đối không được đưa vào trường 'extracted_data'.
+                2. Đối với 'Age': hãy tính tuổi bằng cách lấy 2026 trừ đi năm sinh nếu tìm thấy năm sinh hoặc ngày sinh.
+                3. Đối với 'Gender': Điền 1 cho Nam/Male, 0 cho Nữ/Female.
+                4. Đối với 'BloodPressure': Huyết áp tâm trương (Diastolic blood pressure, lấy số sau hoặc số dưới trong cặp số huyết áp ví dụ 120/80 mmHg lấy 80).
+                5. Đối với 'wc' (Bạch cầu): Nếu trên ảnh ghi là 7.8 x10^3/uL hoặc tương đương, hãy chuyển đổi thành số nguyên tuyệt đối (7800).
+                6. Đối với các trường lâm sàng (htn, dm, cad, pe, ane, appet): 1 là Có/Đúng, 0 là Không/Không có thông tin. 'appet' điền 1 cho Ngon miệng, 0 cho Chán ăn.
+                
+                Chú ý: Chỉ trả về một chuỗi JSON duy nhất. Tuyệt đối không viết thêm lời giải thích hay sử dụng ký hiệu comment (như //) trong kết quả JSON của bạn.
                 """
                 
                 model = genai.GenerativeModel("gemini-3.5-flash")
@@ -1372,6 +1376,18 @@ def digitize_pdf():
                     text = text[3:]
                 if text.endswith("```"):
                     text = text[:-3]
+                text = text.strip()
+                
+                # Strip single-line comments // ...
+                lines = []
+                for line in text.splitlines():
+                    cleaned_line = re.sub(r'//.*$', '', line)
+                    cleaned_line = re.sub(r'#.*$', '', cleaned_line)
+                    lines.append(cleaned_line)
+                text = '\n'.join(lines)
+                
+                # Strip trailing commas
+                text = re.sub(r',\s*([\]}])', r'\1', text)
                 return text.strip()
             
             clean_text = clean_json_text(response.text)
